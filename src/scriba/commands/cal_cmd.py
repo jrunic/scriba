@@ -5,14 +5,14 @@ from datetime import datetime, timedelta
 import typer
 
 from scriba.auth import get_account
-from scriba.display import console, print_error, print_event_table, print_success
+from scriba.display import console, print_error, print_event_table
 
 app = typer.Typer(help="Comandos de agenda")
 
 
 def _parse_date(value: str) -> datetime:
     try:
-        return datetime.strptime(value, "%Y-%m-%d")
+        return datetime.strptime(value, "%Y-%m-%d")  # noqa: DTZ007 — fuso local, spec assumption 8
     except ValueError:
         print_error(f"Data inválida: {value} (esperado AAAA-MM-DD)")
         raise typer.Exit(1) from None
@@ -25,7 +25,11 @@ def list_events(
     limit: int = typer.Option(25, "--limit"),
 ) -> None:
     """Lista eventos num intervalo (default: próximos 7 dias)."""
-    start_dt = _parse_date(start) if start else datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    start_dt = (
+        _parse_date(start)
+        if start
+        else datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)  # noqa: DTZ005 — fuso local, spec assumption 8
+    )
     end_dt = _parse_date(end) if end else start_dt + timedelta(days=7)
 
     account = get_account()
