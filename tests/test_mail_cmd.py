@@ -373,3 +373,29 @@ def test_start_end_attribute_shortcuts_map_to_event_path_not_message():
     assert QueryBuilder._attribute_mapping["start"] == "start/DateTime"
     assert QueryBuilder._attribute_mapping["end"] == "end/DateTime"
     assert "receivedDateTime" not in QueryBuilder._attribute_mapping
+
+
+def test_build_search_query_combines_three_filters_including_date(monkeypatch, tmp_path):
+    """Critério 9 da spec: pina a string OData exata na parte sem data —
+    a parte com data verifica só por conteúdo (achado de revisão dev-10:
+    _parse_filter_word localiza o datetime no fuso do protocolo, então a
+    string completa com offset é frágil entre máquinas)."""
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from datetime import datetime
+
+    from scriba.auth import _build_account
+    from scriba.commands.mail_cmd import _build_search_query
+
+    account = _build_account(client_id="dummy-client-id", tenant_id="common")
+    mailbox = account.mailbox()
+
+    query = _build_search_query(
+        mailbox,
+        unread=True,
+        sender=None,
+        has_attachments=True,
+        start_date=datetime(2026, 9, 1),
+    )
+    rendered = query.as_params()["$filter"]
+
+    assert rendered.startswith("isRead eq false and hasAttachments eq true and receivedDateTime ge ")
