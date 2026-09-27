@@ -200,3 +200,44 @@ def test_reply_reports_failure_when_save_draft_returns_false(mock_get_account, m
     result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body", "Oi"])
 
     assert result.exit_code == 1
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+def test_reply_with_unknown_id_fails(mock_get_account, mock_account):
+    mailbox = MagicMock()
+    mailbox.get_message.return_value = None
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["mail", "reply", "id-inexistente", "--body", "Oi"])
+
+    assert result.exit_code == 1
+    assert "Erro" in result.output
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+def test_reply_to_a_draft_message_fails_with_readable_error(mock_get_account, mock_account, mock_message):
+    mock_message.reply.side_effect = RuntimeError("Can't reply to this message")
+    mailbox = MagicMock()
+    mailbox.get_message.return_value = mock_message
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body", "Oi"])
+
+    assert result.exit_code == 1
+    assert "Erro" in result.output
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+def test_reply_reports_failure_when_reply_call_returns_none(mock_get_account, mock_account, mock_message):
+    mock_message.reply.return_value = None
+    mailbox = MagicMock()
+    mailbox.get_message.return_value = mock_message
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body", "Oi"])
+
+    assert result.exit_code == 1
+    assert "Erro" in result.output

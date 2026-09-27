@@ -44,8 +44,20 @@ def reply(
     mailbox = account.mailbox()
 
     original = mailbox.get_message(object_id=message_id)
+    if original is None:
+        print_error(f"Mensagem não encontrada: {message_id}")
+        raise typer.Exit(1)
 
-    draft = original.reply(to_all=reply_all)
+    try:
+        draft = original.reply(to_all=reply_all)
+    except RuntimeError:
+        print_error("Não é possível responder a esta mensagem (já é rascunho).")
+        raise typer.Exit(1) from None
+
+    if draft is None:
+        print_error("Falha ao criar rascunho de resposta.")
+        raise typer.Exit(1)
+
     draft.body = body
 
     if draft.save_draft():
