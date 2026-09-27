@@ -67,7 +67,15 @@ def reply(
         raise typer.Exit(1)
 
 
-def _build_search_query(mailbox, *, unread: bool, sender: str | None):
+def _build_search_query(
+    mailbox,
+    *,
+    unread: bool,
+    sender: str | None,
+    subject: str | None = None,
+    has_attachments: bool = False,
+    importance: str | None = None,
+):
     """Combina filtros com o operador `&` do CompositeFilter.
 
     Achado de campo (VM Windows, 27/09/2026): a lib `O365` instalada
@@ -85,6 +93,12 @@ def _build_search_query(mailbox, *, unread: bool, sender: str | None):
         # pra "from/emailAddress/address" com o casing certo do protocolo;
         # passar o path já composto corrompe a string (achado de campo).
         filters.append(q.contains("from", sender))
+    if subject:
+        filters.append(q.contains("subject", subject))
+    if has_attachments:
+        filters.append(q.equals("hasAttachments", True))
+    if importance:
+        filters.append(q.equals("importance", importance))
     if not filters:
         return None
     combined = filters[0]
@@ -97,6 +111,9 @@ def _build_search_query(mailbox, *, unread: bool, sender: str | None):
 def search(
     unread: bool = typer.Option(False, "--unread"),
     sender: str | None = typer.Option(None, "--from"),
+    subject: str | None = typer.Option(None, "--subject"),
+    has_attachments: bool = typer.Option(False, "--has-attachments"),
+    importance: str | None = typer.Option(None, "--importance"),
     limit: int = typer.Option(25, "--limit"),
 ) -> None:
     """Lista/filtra mensagens recentes da caixa de entrada."""
@@ -104,7 +121,14 @@ def search(
     mailbox = account.mailbox()
     inbox = mailbox.inbox_folder()
 
-    query = _build_search_query(mailbox, unread=unread, sender=sender)
+    query = _build_search_query(
+        mailbox,
+        unread=unread,
+        sender=sender,
+        subject=subject,
+        has_attachments=has_attachments,
+        importance=importance,
+    )
     messages = list(inbox.get_messages(limit=limit, query=query))
 
     if not messages:

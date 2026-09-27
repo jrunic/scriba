@@ -256,3 +256,72 @@ def test_message_reply_signature_still_has_to_all_true_by_default():
 
     assert "to_all" in sig.parameters
     assert sig.parameters["to_all"].default is True
+
+
+def test_build_search_query_renders_subject_filter(monkeypatch, tmp_path):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.auth import _build_account
+    from scriba.commands.mail_cmd import _build_search_query
+
+    account = _build_account(client_id="dummy-client-id", tenant_id="common")
+    mailbox = account.mailbox()
+
+    query = _build_search_query(mailbox, unread=False, sender=None, subject="fatura")
+    rendered = query.as_params()["$filter"]
+
+    assert rendered == "contains(subject, 'fatura')"
+
+
+def test_build_search_query_renders_has_attachments_filter(monkeypatch, tmp_path):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.auth import _build_account
+    from scriba.commands.mail_cmd import _build_search_query
+
+    account = _build_account(client_id="dummy-client-id", tenant_id="common")
+    mailbox = account.mailbox()
+
+    query = _build_search_query(mailbox, unread=False, sender=None, has_attachments=True)
+    rendered = query.as_params()["$filter"]
+
+    assert rendered == "hasAttachments eq true"
+
+
+def test_build_search_query_renders_importance_filter(monkeypatch, tmp_path):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.auth import _build_account
+    from scriba.commands.mail_cmd import _build_search_query
+
+    account = _build_account(client_id="dummy-client-id", tenant_id="common")
+    mailbox = account.mailbox()
+
+    query = _build_search_query(mailbox, unread=False, sender=None, importance="high")
+    rendered = query.as_params()["$filter"]
+
+    assert rendered == "importance eq 'high'"
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+@patch("scriba.commands.mail_cmd._build_search_query")
+def test_search_command_passes_new_flags_to_build_search_query(mock_build_query, mock_get_account, mock_account):
+    mock_build_query.return_value = None
+    mailbox = MagicMock()
+    inbox = MagicMock()
+    inbox.get_messages.return_value = []
+    mailbox.inbox_folder.return_value = inbox
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    runner.invoke(
+        app,
+        [
+            "mail", "search",
+            "--subject", "fatura",
+            "--has-attachments",
+            "--importance", "high",
+        ],
+    )
+
+    _, kwargs = mock_build_query.call_args
+    assert kwargs["subject"] == "fatura"
+    assert kwargs["has_attachments"] is True
+    assert kwargs["importance"] == "high"
