@@ -11,7 +11,11 @@ tags: [readme, Python]
 
 # scriba
 
-[Uma frase sobre o que este projeto entrega — preenchida pela primeira spec.]
+CLI que dá a um agente de IA acesso a e-mail e agenda do Microsoft 365 via
+Microsoft Graph — leitura de mensagens, criação de rascunho e resposta, e
+leitura/criação de eventos de calendário (múltiplos calendários, não só o
+padrão). Autenticação delegada por device code flow, sem client secret.
+Nunca envia e-mail — decisão de segurança, não limitação técnica.
 
 ## Guias
 
