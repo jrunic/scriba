@@ -46,10 +46,12 @@ def list_events(
         print_error("Não foi possível acessar o calendário padrão.")
         raise typer.Exit(1)
 
-    query = calendar.new_query("start").greater_equal(start_dt)
-    query.chain("and").on_attribute("end").less_equal(end_dt)
-
-    events = list(calendar.get_events(limit=limit, query=query))
+    # `get_events(include_recurring=True)` (default) exige start_recurring/
+    # end_recurring — não um Query genérico de start/end. Achado de campo
+    # (VM Windows, 27/09/2026): `new_query("start")` não existe na lib
+    # instalada (`new_query()` não aceita argumento) e `get_events` sem
+    # esses dois parâmetros levanta ValueError com include_recurring=True.
+    events = list(calendar.get_events(limit=limit, start_recurring=start_dt, end_recurring=end_dt))
 
     if not events:
         console.print("Nenhum evento encontrado no intervalo.")
@@ -69,7 +71,9 @@ def read(event_id: str = typer.Argument(...)) -> None:
         print_error("Não foi possível acessar o calendário padrão.")
         raise typer.Exit(1)
 
-    event = calendar.get_event(object_id=event_id)
+    # get_event() recebe o id posicional — achado de campo, mesma sessão:
+    # `object_id=` não é keyword aceita aqui (diferente de get_message).
+    event = calendar.get_event(event_id)
     if not event:
         print_error(f"Evento não encontrado: {event_id}")
         raise typer.Exit(1)

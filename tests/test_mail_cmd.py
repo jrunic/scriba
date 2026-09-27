@@ -74,8 +74,37 @@ def test_search_combines_unread_and_sender_filters(mock_print_table, mock_get_ac
     result = runner.invoke(app, ["mail", "search", "--unread", "--from", "alice@example.com"])
 
     assert result.exit_code == 0
-    query.on_attribute.assert_any_call("isRead")
-    query.chain.assert_any_call("and")
+    query.equals.assert_any_call("isRead", False)
+    query.contains.assert_any_call("from", "alice@example.com")
+
+
+def test_build_search_query_renders_correct_odata_filter_with_real_o365_objects(monkeypatch, tmp_path):
+    """Regressão do achado de campo (VM Windows, 27/09/2026): a suíte
+    mockada nunca teria pego a API errada (on_attribute/chain não existem)
+    nem o atributo "from" que precisa ficar sem o path composto — só um
+    objeto real da lib, sem mock, prova a string OData renderizada."""
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.auth import _build_account
+    from scriba.commands.mail_cmd import _build_search_query
+
+    account = _build_account(client_id="dummy-client-id", tenant_id="common")
+    mailbox = account.mailbox()
+
+    query = _build_search_query(mailbox, unread=True, sender="alice@example.com")
+    rendered = query.as_params()["$filter"]
+
+    assert rendered == "isRead eq false and contains(from/emailAddress/address, 'alice@example.com')"
+
+
+def test_build_search_query_returns_none_without_filters(monkeypatch, tmp_path):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.auth import _build_account
+    from scriba.commands.mail_cmd import _build_search_query
+
+    account = _build_account(client_id="dummy-client-id", tenant_id="common")
+    mailbox = account.mailbox()
+
+    assert _build_search_query(mailbox, unread=False, sender=None) is None
 
 
 @patch("scriba.commands.mail_cmd.get_account")
