@@ -32,7 +32,12 @@ def mock_event():
     ev.subject = "Reunião de teste"
     ev.start = None
     ev.end = None
-    ev.location = "Sala 1"
+    ev.location = {
+        "displayName": "Sala 1",
+        "locationType": "default",
+        "uniqueId": "Sala 1",
+        "uniqueIdType": "private",
+    }
     ev.body = "Pauta da reunião."
     ev.object_id = "event-id-456"
     ev.is_all_day = False

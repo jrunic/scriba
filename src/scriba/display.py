@@ -73,6 +73,15 @@ def print_mail_detail(msg) -> None:
     console.print(body)
 
 
+def _location_name(location) -> str:
+    """Event.location na lib real é um dict estruturado (displayName,
+    locationType, uniqueId, uniqueIdType) — achado de campo (VM Windows,
+    27/09/2026). Exibir o dict cru mostraria o repr inteiro pro usuário."""
+    if isinstance(location, dict):
+        return location.get("displayName", "") or ""
+    return str(location) if location else ""
+
+
 def print_event_table(events: list) -> None:
     table = Table(title="Eventos")
     table.add_column("Assunto", style="white")
@@ -82,14 +91,14 @@ def print_event_table(events: list) -> None:
 
     for ev in events:
         start = ev.start.strftime("%Y-%m-%d %H:%M") if getattr(ev, "start", None) else ""
-        location = getattr(ev, "location", "") or ""
-        table.add_row(getattr(ev, "subject", "") or "", start, str(location), getattr(ev, "object_id", "") or "")
+        location = _location_name(getattr(ev, "location", None))
+        table.add_row(getattr(ev, "subject", "") or "", start, location, getattr(ev, "object_id", "") or "")
 
     console.print(table)
 
 
 def print_event_detail(event) -> None:
-    location = getattr(event, "location", "") or ""
+    location = _location_name(getattr(event, "location", None))
     header = f"[bold]Local:[/] {location}"
 
     body = getattr(event, "body", "") or "(sem descrição)"

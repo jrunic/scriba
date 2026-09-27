@@ -94,3 +94,20 @@ def test_print_event_detail_shows_location_and_body(mock_event, captured_console
     output = captured_console.getvalue()
     assert "Sala 1" in output
     assert "Pauta da reunião." in output
+
+
+from scriba.display import _location_name
+
+
+def test_location_name_extracts_display_name_from_dict():
+    """Achado de campo (VM Windows, 27/09/2026): Event.location na lib real
+    é um dict estruturado (displayName/locationType/uniqueId/uniqueIdType),
+    não uma string — exibir o dict cru mostra o repr inteiro pro usuário."""
+    location = {"displayName": "Sala 1", "locationType": "default"}
+    assert _location_name(location) == "Sala 1"
+
+
+def test_location_name_handles_missing_or_empty_location():
+    assert _location_name(None) == ""
+    assert _location_name({}) == ""
+    assert _location_name("Sala 1") == "Sala 1"
