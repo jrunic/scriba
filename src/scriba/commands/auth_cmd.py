@@ -41,7 +41,10 @@ def login(
 @app.command()
 def logout() -> None:
     """Remove o token local."""
-    token_path = get_state_dir() / f"{TOKEN_FILENAME}.token"
+    # FileSystemTokenBackend grava exatamente TOKEN_FILENAME, sem sufixo
+    # ".token" — achado de campo (VM Windows, 27/09/2026); confirmado por
+    # listagem real do state dir, não pela suposição anterior.
+    token_path = get_state_dir() / TOKEN_FILENAME
     if token_path.exists():
         token_path.unlink()
         print_success("Logout feito — token removido.")

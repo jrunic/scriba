@@ -61,8 +61,13 @@ def test_status_reports_not_authenticated(mock_load, mock_is_auth, mock_print_er
 
 
 def test_logout_removes_token_file(tmp_path, monkeypatch):
+    """Achado de campo (VM Windows, 27/09/2026): o FileSystemTokenBackend
+    real grava o arquivo como "token" — sem sufixo ".token". O código e
+    este teste assumiam "token.token"; os dois estavam errados do mesmo
+    jeito, então o teste nunca teria pego o bug (confirmado por dir real
+    no state dir da VM)."""
     monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
-    token_file = tmp_path / "token.token"
+    token_file = tmp_path / "token"
     token_file.write_text("fake-token")
 
     result = runner.invoke(app, ["auth", "logout"])
