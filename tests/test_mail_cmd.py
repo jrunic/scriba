@@ -325,3 +325,51 @@ def test_search_command_passes_new_flags_to_build_search_query(mock_build_query,
     assert kwargs["subject"] == "fatura"
     assert kwargs["has_attachments"] is True
     assert kwargs["importance"] == "high"
+
+
+def test_build_search_query_renders_start_date_filter_with_received_date_time(monkeypatch, tmp_path):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from datetime import datetime
+
+    from scriba.auth import _build_account
+    from scriba.commands.mail_cmd import _build_search_query
+
+    account = _build_account(client_id="dummy-client-id", tenant_id="common")
+    mailbox = account.mailbox()
+
+    query = _build_search_query(mailbox, unread=False, sender=None, start_date=datetime(2026, 9, 1))
+    rendered = query.as_params()["$filter"]
+
+    assert rendered.startswith("receivedDateTime ge ")
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+@patch("scriba.commands.mail_cmd._build_search_query")
+def test_search_end_date_is_inclusive_of_the_whole_day(mock_build_query, mock_get_account, mock_account):
+    mock_build_query.return_value = None
+    mailbox = MagicMock()
+    inbox = MagicMock()
+    inbox.get_messages.return_value = []
+    mailbox.inbox_folder.return_value = inbox
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    runner.invoke(app, ["mail", "search", "--end-date", "2026-09-30"])
+
+    _, kwargs = mock_build_query.call_args
+    assert kwargs["end_date"].strftime("%Y-%m-%d") == "2026-10-01"
+
+
+def test_start_end_attribute_shortcuts_map_to_event_path_not_message():
+    """Trava contra a armadilha achada na revisão dev-10 (27/09/2026):
+    'start'/'end' NÃO são atalhos genéricos — o _attribute_mapping da lib
+    os expande pra 'start/DateTime'/'end/DateTime' (caminho de EVENTO,
+    query.py:470). Se scriba algum dia usar esses nomes num filtro de
+    mensagem, a query fica silenciosamente errada — este teste prova
+    contra objeto real da lib que o atalho existe e aponta pro lugar
+    errado, então mail search precisa evitá-lo (usa receivedDateTime)."""
+    from O365.utils.query import QueryBuilder
+
+    assert QueryBuilder._attribute_mapping["start"] == "start/DateTime"
+    assert QueryBuilder._attribute_mapping["end"] == "end/DateTime"
+    assert "receivedDateTime" not in QueryBuilder._attribute_mapping

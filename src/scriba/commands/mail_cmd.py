@@ -1,9 +1,11 @@
 """Comandos de e-mail: draft, search, read."""
 
+from datetime import timedelta
 
 import typer
 
 from scriba.auth import get_account
+from scriba.commands.cal_cmd import _parse_date
 from scriba.display import console, print_error, print_mail_detail, print_mail_table, print_success
 
 app = typer.Typer(help="Comandos de e-mail")
@@ -75,14 +77,19 @@ def _build_search_query(
     subject: str | None = None,
     has_attachments: bool = False,
     importance: str | None = None,
+    start_date=None,
+    end_date=None,
 ):
     """Combina filtros com o operador `&` do CompositeFilter.
 
     Achado de campo (VM Windows, 27/09/2026): a lib `O365` instalada
     (2.1.10) não tem `on_attribute()`/`chain()` — `QueryBuilder.equals()`/
     `.contains()` recebem `(atributo, valor)` direto e devolvem um
-    `CompositeFilter` que se combina com `&`/`|`. O mock da suíte aceitava
-    qualquer chamada e nunca teria pego essa deriva de API.
+    `CompositeFilter` que se combina com `&`/`|`. `--start-date`/
+    `--end-date` usam o atributo `receivedDateTime` explícito — nunca os
+    atalhos `start`/`end`, que o `_attribute_mapping` da lib expande para
+    caminho de EVENTO (`start/DateTime`), não de mensagem (achado de
+    revisão dev-10, query.py:470).
     """
     q = mailbox.new_query()
     filters = []
@@ -99,6 +106,10 @@ def _build_search_query(
         filters.append(q.equals("hasAttachments", True))
     if importance:
         filters.append(q.equals("importance", importance))
+    if start_date:
+        filters.append(q.greater_equal("receivedDateTime", start_date))
+    if end_date:
+        filters.append(q.less_equal("receivedDateTime", end_date))
     if not filters:
         return None
     combined = filters[0]
@@ -114,12 +125,19 @@ def search(
     subject: str | None = typer.Option(None, "--subject"),
     has_attachments: bool = typer.Option(False, "--has-attachments"),
     importance: str | None = typer.Option(None, "--importance"),
+    start_date: str | None = typer.Option(None, "--start-date"),
+    end_date: str | None = typer.Option(None, "--end-date"),
     limit: int = typer.Option(25, "--limit"),
 ) -> None:
     """Lista/filtra mensagens recentes da caixa de entrada."""
     account = get_account()
     mailbox = account.mailbox()
     inbox = mailbox.inbox_folder()
+
+    # --end-date é inclusivo do dia inteiro (decisão de revisão dev-10,
+    # 27/09/2026): soma um dia antes do less_equal, senão exclui as
+    # mensagens do próprio dia final (_parse_date devolve meia-noite).
+    end_date_dt = _parse_date(end_date) + timedelta(days=1) if end_date else None
 
     query = _build_search_query(
         mailbox,
@@ -128,6 +146,8 @@ def search(
         subject=subject,
         has_attachments=has_attachments,
         importance=importance,
+        start_date=_parse_date(start_date) if start_date else None,
+        end_date=end_date_dt,
     )
     messages = list(inbox.get_messages(limit=limit, query=query))
 
