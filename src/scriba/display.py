@@ -76,3 +76,15 @@ def print_event_table(events: list) -> None:
         table.add_row(getattr(ev, "subject", "") or "", start, str(location), getattr(ev, "object_id", "") or "")
 
     console.print(table)
+
+
+def print_event_detail(event) -> None:
+    location = getattr(event, "location", "") or ""
+    header = f"[bold]Local:[/] {location}"
+
+    body = getattr(event, "body", "") or "(sem descrição)"
+    if looks_like_html(body):
+        body = strip_html(body)
+
+    console.print(Panel(header, title=getattr(event, "subject", "") or "(sem assunto)", border_style="green"))
+    console.print(body)

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import typer
 
 from scriba.auth import get_account
-from scriba.display import console, print_error, print_event_table
+from scriba.display import console, print_error, print_event_detail, print_event_table
 
 app = typer.Typer(help="Comandos de agenda")
 
@@ -50,3 +50,22 @@ def list_events(
         return
 
     print_event_table(events)
+
+
+@app.command()
+def read(event_id: str = typer.Argument(...)) -> None:
+    """Lê um evento por ID."""
+    account = get_account()
+    schedule = account.schedule()
+    calendar = schedule.get_default_calendar()
+
+    if calendar is None:
+        print_error("Não foi possível acessar o calendário padrão.")
+        raise typer.Exit(1)
+
+    event = calendar.get_event(object_id=event_id)
+    if not event:
+        print_error(f"Evento não encontrado: {event_id}")
+        raise typer.Exit(1)
+
+    print_event_detail(event)
