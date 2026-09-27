@@ -33,6 +33,28 @@ def draft(
         raise typer.Exit(1)
 
 
+@app.command()
+def reply(
+    message_id: str = typer.Argument(...),
+    body: str = typer.Option(..., "--body"),
+    reply_all: bool = typer.Option(False, "--reply-all"),
+) -> None:
+    """Cria um rascunho de resposta a uma mensagem existente — nunca envia."""
+    account = get_account()
+    mailbox = account.mailbox()
+
+    original = mailbox.get_message(object_id=message_id)
+
+    draft = original.reply(to_all=reply_all)
+    draft.body = body
+
+    if draft.save_draft():
+        print_success("Resposta criada na pasta Rascunhos do Outlook.")
+    else:
+        print_error("Falha ao salvar rascunho de resposta.")
+        raise typer.Exit(1)
+
+
 def _build_search_query(mailbox, *, unread: bool, sender: str | None):
     """Combina filtros com o operador `&` do CompositeFilter.
 

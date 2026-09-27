@@ -147,3 +147,56 @@ def test_read_with_unknown_id_fails(mock_get_account, mock_account):
     result = runner.invoke(app, ["mail", "read", "id-inexistente"])
 
     assert result.exit_code == 1
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+def test_reply_creates_draft_addressed_to_sender_only_by_default(mock_get_account, mock_account, mock_message):
+    draft = MagicMock()
+    draft.save_draft.return_value = True
+    mock_message.reply.return_value = draft
+    mailbox = MagicMock()
+    mailbox.get_message.return_value = mock_message
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body", "Recebido, obrigado."])
+
+    assert result.exit_code == 0
+    mock_message.reply.assert_called_once_with(to_all=False)
+    assert draft.body == "Recebido, obrigado."
+    draft.save_draft.assert_called_once()
+    draft.send.assert_not_called()
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+def test_reply_with_reply_all_addresses_every_original_recipient(mock_get_account, mock_account, mock_message):
+    draft = MagicMock()
+    draft.save_draft.return_value = True
+    mock_message.reply.return_value = draft
+    mailbox = MagicMock()
+    mailbox.get_message.return_value = mock_message
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(
+        app,
+        ["mail", "reply", "msg-id-123", "--body", "Recebido, obrigado a todos.", "--reply-all"],
+    )
+
+    assert result.exit_code == 0
+    mock_message.reply.assert_called_once_with(to_all=True)
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+def test_reply_reports_failure_when_save_draft_returns_false(mock_get_account, mock_account, mock_message):
+    draft = MagicMock()
+    draft.save_draft.return_value = False
+    mock_message.reply.return_value = draft
+    mailbox = MagicMock()
+    mailbox.get_message.return_value = mock_message
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body", "Oi"])
+
+    assert result.exit_code == 1
