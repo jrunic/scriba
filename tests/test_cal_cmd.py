@@ -274,3 +274,47 @@ def test_create_with_calendar_option_operates_on_named_calendar(mock_get_account
     assert result.exit_code == 0
     mock_calendar_secondary.new_event.assert_called_once()
     new_event.save.assert_called_once()
+
+
+def test_resolve_calendar_falls_back_to_calendar_name_when_id_lookup_raises_http_error(mock_calendar_secondary):
+    """Achado de campo (VM Windows, 27/09/2026): a lib não devolve `None`
+    para todo id que não resolve — um id malformado (nossa string opaca de
+    --calendar tentada como calendar_id) causa 400 Bad Request no Graph, e
+    a lib levanta HTTPError (raise_http_errors=True é o default), não
+    devolve resposta falsy. O caminho id-então-nome precisa sobreviver a
+    isso, não só ao caso em que a lib devolve None."""
+    from requests.exceptions import HTTPError
+
+    from scriba.commands.cal_cmd import _resolve_calendar
+
+    schedule = MagicMock()
+    schedule.get_calendar.side_effect = [HTTPError("400 Bad Request"), mock_calendar_secondary]
+
+    result = _resolve_calendar(schedule, "Trabalho")
+
+    assert result is mock_calendar_secondary
+    assert schedule.get_calendar.call_args_list == [
+        call(calendar_id="Trabalho"),
+        call(calendar_name="Trabalho"),
+    ]
+
+
+@patch("scriba.commands.cal_cmd.print_error")
+def test_resolve_calendar_raises_readable_error_when_both_attempts_raise_http_error(mock_print_error):
+    import typer
+    from requests.exceptions import HTTPError
+
+    from scriba.commands.cal_cmd import _resolve_calendar
+
+    schedule = MagicMock()
+    schedule.get_calendar.side_effect = [HTTPError("400 Bad Request"), HTTPError("400 Bad Request")]
+
+    try:
+        _resolve_calendar(schedule, "não-existe")
+        raised = False
+    except typer.Exit as exc:
+        raised = True
+        assert exc.exit_code == 1
+
+    assert raised
+    mock_print_error.assert_called_once_with("Calendário não encontrado: não-existe")

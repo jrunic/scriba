@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 
 import typer
+from requests.exceptions import HTTPError
 
 from scriba.auth import get_account
 from scriba.display import (
@@ -37,8 +38,12 @@ def _resolve_calendar(schedule, calendar: str | None):
     `Schedule.get_calendar()` exige escolher `calendar_id=` OU
     `calendar_name=`, nunca os dois (RuntimeError se ambos ou nenhum —
     achado de revisão dev-10, calendar.py:2044). A CLI recebe uma string
-    opaca; tenta `calendar_id` primeiro — id inválido faz a lib devolver
-    `None` (não levanta).
+    opaca; tenta `calendar_id` primeiro. Achado de campo (VM Windows,
+    27/09/2026): um id **malformado** (não um id real, tipo o nome que a
+    CLI tenta primeiro) não devolve `None` — o Graph responde 400 e a lib
+    levanta `HTTPError` (`raise_http_errors=True` é o default da lib), não
+    resposta falsy. O fallback pra `calendar_name` precisa sobreviver à
+    exceção, não só ao caso em que a lib devolve `None`.
     """
     if calendar is None:
         default = schedule.get_default_calendar()
@@ -47,11 +52,17 @@ def _resolve_calendar(schedule, calendar: str | None):
             raise typer.Exit(1)
         return default
 
-    found = schedule.get_calendar(calendar_id=calendar)
+    try:
+        found = schedule.get_calendar(calendar_id=calendar)
+    except HTTPError:
+        found = None
     if found is not None:
         return found
 
-    found = schedule.get_calendar(calendar_name=calendar)
+    try:
+        found = schedule.get_calendar(calendar_name=calendar)
+    except HTTPError:
+        found = None
     if found is not None:
         return found
 
