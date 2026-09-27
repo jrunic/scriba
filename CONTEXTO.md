@@ -163,6 +163,17 @@ Hard limits sempre relevantes durante a sessão (ADR `20260609-eliminacao-do-84-
   código novo que construa `Query` deve ter pelo menos um teste contra um
   objeto `O365` real (padrão em `tests/test_mail_cmd.py::test_build_search_query_*`),
   não só mock.
+- **`Schedule.get_calendar()`/qualquer chamada da lib `O365` não devolve
+  `None` para todo erro — devolve `None` só quando o Graph responde com
+  uma resposta HTTP falsy; para a maioria dos erros 4xx/5xx (`raise_http_errors=True`
+  é o default) ela levanta `requests.exceptions.HTTPError`.** Achado de
+  campo (bancada Windows, 27/09/2026): um id malformado (não um id real de
+  formato reconhecível) causa 400 Bad Request no Graph, e a lib levanta em
+  vez de devolver falsy — código que trata "não encontrado" como só
+  `if resultado is None` some com esse caso. Qualquer caminho que tente
+  recurso por id possivelmente inválido precisa envolver a chamada em
+  `try/except HTTPError`, não só checar `None` (ver `_resolve_calendar` em
+  `cal_cmd.py` para o padrão).
 
 
 ## Decisões Herdadas (explícitas)
