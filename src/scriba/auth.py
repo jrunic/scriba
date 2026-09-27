@@ -72,7 +72,7 @@ def is_authenticated() -> bool:
     try:
         account = _build_account(client_id, config.get("tenant_id", "common"))
         return account.is_authenticated
-    except Exception:
+    except Exception:  # noqa: BLE001 — checagem de status nunca deve estourar pro chamador
         return False
 
 

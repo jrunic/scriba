@@ -1,6 +1,5 @@
 """Comandos de e-mail: draft, search, read."""
 
-from typing import Optional
 
 import typer
 
@@ -15,7 +14,7 @@ def draft(
     to: str = typer.Option(..., "--to"),
     subject: str = typer.Option(..., "--subject"),
     body: str = typer.Option(..., "--body"),
-    cc: Optional[str] = typer.Option(None, "--cc"),
+    cc: str | None = typer.Option(None, "--cc"),
 ) -> None:
     """Cria um rascunho — nunca envia."""
     account = get_account()
@@ -37,7 +36,7 @@ def draft(
 @app.command()
 def search(
     unread: bool = typer.Option(False, "--unread"),
-    sender: Optional[str] = typer.Option(None, "--from"),
+    sender: str | None = typer.Option(None, "--from"),
     limit: int = typer.Option(25, "--limit"),
 ) -> None:
     """Lista/filtra mensagens recentes da caixa de entrada."""

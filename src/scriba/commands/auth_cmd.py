@@ -1,6 +1,5 @@
 """Comandos de autenticação: login, logout, status."""
 
-from typing import Optional
 
 import typer
 
@@ -13,7 +12,7 @@ app = typer.Typer(help="Gerencia autenticação.")
 
 @app.command()
 def login(
-    client_id: Optional[str] = typer.Option(None, "--client-id", envvar="SCRIBA_CLIENT_ID"),
+    client_id: str | None = typer.Option(None, "--client-id", envvar="SCRIBA_CLIENT_ID"),
     tenant_id: str = typer.Option("common", "--tenant-id", envvar="SCRIBA_TENANT_ID"),
 ) -> None:
     """Autentica via device code flow."""
