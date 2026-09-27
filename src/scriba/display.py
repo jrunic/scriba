@@ -17,13 +17,23 @@ def print_success(msg: str) -> None:
 
 
 def strip_html(text: str) -> str:
-    """Converte corpo de e-mail em HTML para texto legível em terminal."""
-    clean = re.sub(r"<br\s*/?>", "\n", text)
+    """Converte corpo de e-mail em HTML para texto legível em terminal.
+
+    Remove bloco <style>/<script> inteiro (conteúdo, não só a tag) e
+    zero-width space (U+200B) — achado de campo (VM Windows, 27/09/2026):
+    e-mail HTML real da Microsoft deixava CSS vazando no terminal e o
+    U+200B quebrava a codificação cp1252 do console legado do Windows com
+    UnicodeEncodeError.
+    """
+    clean = re.sub(r"<style[^>]*>.*?</style>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    clean = re.sub(r"<script[^>]*>.*?</script>", "", clean, flags=re.DOTALL | re.IGNORECASE)
+    clean = re.sub(r"<br\s*/?>", "\n", clean)
     clean = re.sub(r"<p[^>]*>", "\n", clean)
     clean = re.sub(r"</p>", "", clean)
     clean = re.sub(r"<[^>]+>", "", clean)
     clean = re.sub(r"&nbsp;", " ", clean)
     clean = html.unescape(clean)
+    clean = clean.replace("\u200b", "")
     return clean.strip()
 
 

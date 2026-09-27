@@ -41,6 +41,20 @@ def test_strip_html_unescapes_entities():
     assert strip_html("A&nbsp;B") == "A B"
 
 
+def test_strip_html_removes_style_block_content():
+    html = "<style>body{color:red;font-size:14px}</style><p>Oi</p>"
+    assert strip_html(html) == "Oi"
+
+
+def test_strip_html_removes_script_block_content():
+    html = "<script>var x = 1;</script><p>Oi</p>"
+    assert strip_html(html) == "Oi"
+
+
+def test_strip_html_removes_zero_width_space():
+    assert strip_html("Oi\u200btudo bem") == "Oitudo bem"
+
+
 from scriba.display import print_mail_table
 
 
