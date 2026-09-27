@@ -134,20 +134,17 @@ def create(
     start: str = typer.Option(..., "--start"),
     end: str = typer.Option(..., "--end"),
     location: str | None = typer.Option(None, "--location"),
+    calendar: str | None = typer.Option(None, "--calendar"),
 ) -> None:
-    """Cria um evento na agenda padrão."""
+    """Cria um evento na agenda (padrão, ou a indicada por --calendar)."""
     start_dt = _parse_datetime(start)
     end_dt = _parse_datetime(end)
 
     account = get_account()
     schedule = account.schedule()
-    calendar = schedule.get_default_calendar()
+    calendar_obj = _resolve_calendar(schedule, calendar)
 
-    if calendar is None:
-        print_error("Não foi possível acessar o calendário padrão.")
-        raise typer.Exit(1)
-
-    new_event = calendar.new_event()
+    new_event = calendar_obj.new_event()
     new_event.subject = subject
     new_event.start = start_dt
     new_event.end = end_dt

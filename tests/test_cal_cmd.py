@@ -247,3 +247,29 @@ def test_read_with_calendar_option_operates_on_named_calendar(mock_print_detail,
 
     assert result.exit_code == 0
     mock_calendar_secondary.get_event.assert_called_once_with("event-id-456")
+
+
+@patch("scriba.commands.cal_cmd.get_account")
+def test_create_with_calendar_option_operates_on_named_calendar(mock_get_account, mock_account, mock_calendar_secondary):
+    schedule = MagicMock()
+    schedule.get_calendar.side_effect = [None, mock_calendar_secondary]
+    new_event = MagicMock()
+    new_event.save.return_value = True
+    mock_calendar_secondary.new_event.return_value = new_event
+    mock_account.schedule.return_value = schedule
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(
+        app,
+        [
+            "cal", "create",
+            "--subject", "Reunião",
+            "--start", "2026-10-08 12:00",
+            "--end", "2026-10-08 13:00",
+            "--calendar", "Trabalho",
+        ],
+    )
+
+    assert result.exit_code == 0
+    mock_calendar_secondary.new_event.assert_called_once()
+    new_event.save.assert_called_once()
