@@ -241,3 +241,18 @@ def test_reply_reports_failure_when_reply_call_returns_none(mock_get_account, mo
 
     assert result.exit_code == 1
     assert "Erro" in result.output
+
+
+def test_message_reply_signature_still_has_to_all_true_by_default():
+    """Documenta a armadilha achada na revisão dev-10 (27/09/2026): o
+    default da lib é o oposto do que a CLI expõe (to_all=False). Se essa
+    assinatura mudar (nome do parâmetro ou default), este teste quebra
+    antes de virar um reply-all silencioso em produção."""
+    import inspect
+
+    from O365.message import Message
+
+    sig = inspect.signature(Message.reply)
+
+    assert "to_all" in sig.parameters
+    assert sig.parameters["to_all"].default is True
