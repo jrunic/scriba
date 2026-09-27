@@ -1,0 +1,103 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+      - name: Install deps
+        run: uv sync --all-extras
+      - name: Lint
+        run: uv run ruff check .
+      - name: Formatação
+        run: uv run ruff format --check .
+      - name: Tests
+        run: uv run pytest -q
+
+  build:
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Build (wheel + sdist)
+        run: uv build
+
+      - name: Checa tag == versão do pacote
+        run: |
+          V="$(uv run python -c 'from scriba import __version__; print(__version__)')"
+          TAGV="${GITHUB_REF_NAME#v}"
+          if [ "$V" != "$TAGV" ]; then
+            echo "::error::versão do pacote (${V}) difere da tag (v${TAGV}) — bump pyproject.toml/__init__.py antes de re-taggear"
+            exit 1
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scriba-dist
+          path: dist/*
+          retention-days: 7
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: scriba-dist
+          path: dist
+
+      - name: Extrai notas do CHANGELOG
+        id: notes
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          NOTES_FILE=$(mktemp)
+
+          awk "/^## \\[${VERSION}\\]/{flag=1; next} /^## \\[/{flag=0} flag" CHANGELOG.md > "${NOTES_FILE}"
+
+          if [ ! -s "${NOTES_FILE}" ]; then
+            echo "::error::CHANGELOG.md não tem seção ## [${VERSION}] — atualize o CHANGELOG antes de re-publicar a tag."
+            exit 1
+          fi
+
+          echo "notes_path=${NOTES_FILE}" >> "$GITHUB_OUTPUT"
+          echo "---- Release notes ----"
+          cat "${NOTES_FILE}"
+          echo "---- Fim ----"
+
+      - name: Cria GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body_path: ${{ steps.notes.outputs.notes_path }}
+          files: dist/*
+          fail_on_unmatched_files: true

@@ -29,4 +29,5 @@ Nunca envia e-mail — decisão de segurança, não limitação técnica.
 - `CONTEXTO.md` — padrões técnicos e restrições (comece aqui)
 - `GLOSSARIO.md` — linguagem do domínio
 - `roadmap.md` — incrementos e estado
+- `CHANGELOG.md` — histórico de versões
 - `docs/` — arquitetura, domínio, decisões e documentação (Diátaxis)
