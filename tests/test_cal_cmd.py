@@ -9,7 +9,9 @@ runner = CliRunner()
 
 @patch("scriba.commands.cal_cmd.get_account")
 @patch("scriba.commands.cal_cmd.print_event_table")
-def test_list_shows_events_in_default_range(mock_print_table, mock_get_account, mock_account, mock_event):
+def test_list_shows_events_in_default_range(
+    mock_print_table, mock_get_account, mock_account, mock_event
+):
     schedule = MagicMock()
     calendar = MagicMock()
     calendar.get_events.return_value = [mock_event]
@@ -103,7 +105,16 @@ def test_create_saves_event_with_subject_and_times(mock_get_account, mock_accoun
 
     result = runner.invoke(
         app,
-        ["cal", "create", "--subject", "Reunião", "--start", "2026-10-08 12:00", "--end", "2026-10-08 13:00"],
+        [
+            "cal",
+            "create",
+            "--subject",
+            "Reunião",
+            "--start",
+            "2026-10-08 12:00",
+            "--end",
+            "2026-10-08 13:00",
+        ],
     )
 
     assert result.exit_code == 0
@@ -124,7 +135,16 @@ def test_create_reports_failure_when_save_returns_false(mock_get_account, mock_a
 
     result = runner.invoke(
         app,
-        ["cal", "create", "--subject", "Reunião", "--start", "2026-10-08 12:00", "--end", "2026-10-08 13:00"],
+        [
+            "cal",
+            "create",
+            "--subject",
+            "Reunião",
+            "--start",
+            "2026-10-08 12:00",
+            "--end",
+            "2026-10-08 13:00",
+        ],
     )
 
     assert result.exit_code == 1
@@ -132,7 +152,9 @@ def test_create_reports_failure_when_save_returns_false(mock_get_account, mock_a
 
 @patch("scriba.commands.cal_cmd.get_account")
 @patch("scriba.commands.cal_cmd.print_calendar_table")
-def test_calendars_lists_accounts_calendars(mock_print_table, mock_get_account, mock_account, mock_calendar):
+def test_calendars_lists_accounts_calendars(
+    mock_print_table, mock_get_account, mock_account, mock_calendar
+):
     schedule = MagicMock()
     schedule.list_calendars.return_value = [mock_calendar]
     mock_account.schedule.return_value = schedule
@@ -221,7 +243,9 @@ def test_schedule_get_calendar_signature_still_requires_exactly_one_of_id_or_nam
 
 
 @patch("scriba.commands.cal_cmd.get_account")
-def test_list_with_calendar_option_operates_on_named_calendar(mock_get_account, mock_account, mock_calendar_secondary, mock_event):
+def test_list_with_calendar_option_operates_on_named_calendar(
+    mock_get_account, mock_account, mock_calendar_secondary, mock_event
+):
     schedule = MagicMock()
     schedule.get_calendar.side_effect = [None, mock_calendar_secondary]
     mock_calendar_secondary.get_events.return_value = [mock_event]
@@ -237,7 +261,9 @@ def test_list_with_calendar_option_operates_on_named_calendar(mock_get_account, 
 
 @patch("scriba.commands.cal_cmd.get_account")
 @patch("scriba.commands.cal_cmd.print_event_detail")
-def test_read_with_calendar_option_operates_on_named_calendar(mock_print_detail, mock_get_account, mock_account, mock_calendar_secondary, mock_event):
+def test_read_with_calendar_option_operates_on_named_calendar(
+    mock_print_detail, mock_get_account, mock_account, mock_calendar_secondary, mock_event
+):
     schedule = MagicMock()
     schedule.get_calendar.side_effect = [None, mock_calendar_secondary]
     mock_calendar_secondary.get_event.return_value = mock_event
@@ -251,7 +277,9 @@ def test_read_with_calendar_option_operates_on_named_calendar(mock_print_detail,
 
 
 @patch("scriba.commands.cal_cmd.get_account")
-def test_create_with_calendar_option_operates_on_named_calendar(mock_get_account, mock_account, mock_calendar_secondary):
+def test_create_with_calendar_option_operates_on_named_calendar(
+    mock_get_account, mock_account, mock_calendar_secondary
+):
     schedule = MagicMock()
     schedule.get_calendar.side_effect = [None, mock_calendar_secondary]
     new_event = MagicMock()
@@ -263,11 +291,16 @@ def test_create_with_calendar_option_operates_on_named_calendar(mock_get_account
     result = runner.invoke(
         app,
         [
-            "cal", "create",
-            "--subject", "Reunião",
-            "--start", "2026-10-08 12:00",
-            "--end", "2026-10-08 13:00",
-            "--calendar", "Trabalho",
+            "cal",
+            "create",
+            "--subject",
+            "Reunião",
+            "--start",
+            "2026-10-08 12:00",
+            "--end",
+            "2026-10-08 13:00",
+            "--calendar",
+            "Trabalho",
         ],
     )
 
@@ -276,7 +309,9 @@ def test_create_with_calendar_option_operates_on_named_calendar(mock_get_account
     new_event.save.assert_called_once()
 
 
-def test_resolve_calendar_falls_back_to_calendar_name_when_id_lookup_raises_http_error(mock_calendar_secondary):
+def test_resolve_calendar_falls_back_to_calendar_name_when_id_lookup_raises_http_error(
+    mock_calendar_secondary,
+):
     """Achado de campo (VM Windows, 27/09/2026): a lib não devolve `None`
     para todo id que não resolve — um id malformado (nossa string opaca de
     --calendar tentada como calendar_id) causa 400 Bad Request no Graph, e
@@ -300,7 +335,9 @@ def test_resolve_calendar_falls_back_to_calendar_name_when_id_lookup_raises_http
 
 
 @patch("scriba.commands.cal_cmd.print_error")
-def test_resolve_calendar_raises_readable_error_when_both_attempts_raise_http_error(mock_print_error):
+def test_resolve_calendar_raises_readable_error_when_both_attempts_raise_http_error(
+    mock_print_error,
+):
     import typer
     from requests.exceptions import HTTPError
 

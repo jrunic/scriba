@@ -1,6 +1,5 @@
 """Comandos de autenticação: login, logout, status."""
 
-
 import typer
 
 from scriba.auth import TOKEN_FILENAME, authenticate, is_authenticated

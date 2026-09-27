@@ -69,7 +69,9 @@ def print_mail_detail(msg) -> None:
         body = strip_html(body)
 
     header = f"[bold]De:[/] {sender}"
-    console.print(Panel(header, title=getattr(msg, "subject", "") or "(sem assunto)", border_style="blue"))
+    console.print(
+        Panel(header, title=getattr(msg, "subject", "") or "(sem assunto)", border_style="blue")
+    )
     console.print(body)
 
 
@@ -92,7 +94,9 @@ def print_event_table(events: list) -> None:
     for ev in events:
         start = ev.start.strftime("%Y-%m-%d %H:%M") if getattr(ev, "start", None) else ""
         location = _location_name(getattr(ev, "location", None))
-        table.add_row(getattr(ev, "subject", "") or "", start, location, getattr(ev, "object_id", "") or "")
+        table.add_row(
+            getattr(ev, "subject", "") or "", start, location, getattr(ev, "object_id", "") or ""
+        )
 
     console.print(table)
 
@@ -105,7 +109,9 @@ def print_event_detail(event) -> None:
     if looks_like_html(body):
         body = strip_html(body)
 
-    console.print(Panel(header, title=getattr(event, "subject", "") or "(sem assunto)", border_style="green"))
+    console.print(
+        Panel(header, title=getattr(event, "subject", "") or "(sem assunto)", border_style="green")
+    )
     console.print(body)
 
 

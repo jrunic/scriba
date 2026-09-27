@@ -48,7 +48,9 @@ def authenticate(client_id: str, tenant_id: str = "common") -> bool:
 
     flow = app.initiate_device_flow(scopes=scopes)
     if "user_code" not in flow:
-        print_error(f"Falha ao iniciar device code flow: {flow.get('error_description', 'erro desconhecido')}")
+        print_error(
+            f"Falha ao iniciar device code flow: {flow.get('error_description', 'erro desconhecido')}"
+        )
         return False
 
     console.print(f"\n[bold]Acesse:[/] [link]{flow['verification_uri']}[/link]")

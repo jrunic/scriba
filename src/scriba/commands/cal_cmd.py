@@ -102,7 +102,9 @@ def list_events(
     # (VM Windows, 27/09/2026): `new_query("start")` não existe na lib
     # instalada (`new_query()` não aceita argumento) e `get_events` sem
     # esses dois parâmetros levanta ValueError com include_recurring=True.
-    events = list(calendar_obj.get_events(limit=limit, start_recurring=start_dt, end_recurring=end_dt))
+    events = list(
+        calendar_obj.get_events(limit=limit, start_recurring=start_dt, end_recurring=end_dt)
+    )
 
     if not events:
         console.print("Nenhum evento encontrado no intervalo.")

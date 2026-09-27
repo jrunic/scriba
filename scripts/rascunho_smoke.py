@@ -24,7 +24,10 @@ from scriba.config import save_config
 
 def main() -> None:
     if len(sys.argv) != 2:
-        print("Uso: uv run python scripts/rascunho_smoke.py <destinatario@exemplo.com>", file=sys.stderr)
+        print(
+            "Uso: uv run python scripts/rascunho_smoke.py <destinatario@exemplo.com>",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     to_address = sys.argv[1]
@@ -56,7 +59,9 @@ def main() -> None:
         print("OK: save_draft() retornou True.")
         print("Confira AGORA a pasta Rascunhos do Outlook da conta autenticada.")
     else:
-        print("FALHA: save_draft() retornou False — investigar antes de prosseguir.", file=sys.stderr)
+        print(
+            "FALHA: save_draft() retornou False — investigar antes de prosseguir.", file=sys.stderr
+        )
         sys.exit(1)
 
 

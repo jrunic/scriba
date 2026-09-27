@@ -61,7 +61,9 @@ def test_search_lists_unread_only(mock_print_table, mock_get_account, mock_accou
 
 @patch("scriba.commands.mail_cmd.get_account")
 @patch("scriba.commands.mail_cmd.print_mail_table")
-def test_search_combines_unread_and_sender_filters(mock_print_table, mock_get_account, mock_account, mock_message):
+def test_search_combines_unread_and_sender_filters(
+    mock_print_table, mock_get_account, mock_account, mock_message
+):
     mailbox = MagicMock()
     inbox = MagicMock()
     inbox.get_messages.return_value = [mock_message]
@@ -78,7 +80,9 @@ def test_search_combines_unread_and_sender_filters(mock_print_table, mock_get_ac
     query.contains.assert_any_call("from", "alice@example.com")
 
 
-def test_build_search_query_renders_correct_odata_filter_with_real_o365_objects(monkeypatch, tmp_path):
+def test_build_search_query_renders_correct_odata_filter_with_real_o365_objects(
+    monkeypatch, tmp_path
+):
     """Regressão do achado de campo (VM Windows, 27/09/2026): a suíte
     mockada nunca teria pego a API errada (on_attribute/chain não existem)
     nem o atributo "from" que precisa ficar sem o path composto — só um
@@ -93,7 +97,9 @@ def test_build_search_query_renders_correct_odata_filter_with_real_o365_objects(
     query = _build_search_query(mailbox, unread=True, sender="alice@example.com")
     rendered = query.as_params()["$filter"]
 
-    assert rendered == "isRead eq false and contains(from/emailAddress/address, 'alice@example.com')"
+    assert (
+        rendered == "isRead eq false and contains(from/emailAddress/address, 'alice@example.com')"
+    )
 
 
 def test_build_search_query_returns_none_without_filters(monkeypatch, tmp_path):
@@ -150,7 +156,9 @@ def test_read_with_unknown_id_fails(mock_get_account, mock_account):
 
 
 @patch("scriba.commands.mail_cmd.get_account")
-def test_reply_creates_draft_addressed_to_sender_only_by_default(mock_get_account, mock_account, mock_message):
+def test_reply_creates_draft_addressed_to_sender_only_by_default(
+    mock_get_account, mock_account, mock_message
+):
     draft = MagicMock()
     draft.save_draft.return_value = True
     mock_message.reply.return_value = draft
@@ -169,7 +177,9 @@ def test_reply_creates_draft_addressed_to_sender_only_by_default(mock_get_accoun
 
 
 @patch("scriba.commands.mail_cmd.get_account")
-def test_reply_with_reply_all_addresses_every_original_recipient(mock_get_account, mock_account, mock_message):
+def test_reply_with_reply_all_addresses_every_original_recipient(
+    mock_get_account, mock_account, mock_message
+):
     draft = MagicMock()
     draft.save_draft.return_value = True
     mock_message.reply.return_value = draft
@@ -188,7 +198,9 @@ def test_reply_with_reply_all_addresses_every_original_recipient(mock_get_accoun
 
 
 @patch("scriba.commands.mail_cmd.get_account")
-def test_reply_reports_failure_when_save_draft_returns_false(mock_get_account, mock_account, mock_message):
+def test_reply_reports_failure_when_save_draft_returns_false(
+    mock_get_account, mock_account, mock_message
+):
     draft = MagicMock()
     draft.save_draft.return_value = False
     mock_message.reply.return_value = draft
@@ -216,7 +228,9 @@ def test_reply_with_unknown_id_fails(mock_get_account, mock_account):
 
 
 @patch("scriba.commands.mail_cmd.get_account")
-def test_reply_to_a_draft_message_fails_with_readable_error(mock_get_account, mock_account, mock_message):
+def test_reply_to_a_draft_message_fails_with_readable_error(
+    mock_get_account, mock_account, mock_message
+):
     mock_message.reply.side_effect = RuntimeError("Can't reply to this message")
     mailbox = MagicMock()
     mailbox.get_message.return_value = mock_message
@@ -230,7 +244,9 @@ def test_reply_to_a_draft_message_fails_with_readable_error(mock_get_account, mo
 
 
 @patch("scriba.commands.mail_cmd.get_account")
-def test_reply_reports_failure_when_reply_call_returns_none(mock_get_account, mock_account, mock_message):
+def test_reply_reports_failure_when_reply_call_returns_none(
+    mock_get_account, mock_account, mock_message
+):
     mock_message.reply.return_value = None
     mailbox = MagicMock()
     mailbox.get_message.return_value = mock_message
@@ -302,7 +318,9 @@ def test_build_search_query_renders_importance_filter(monkeypatch, tmp_path):
 
 @patch("scriba.commands.mail_cmd.get_account")
 @patch("scriba.commands.mail_cmd._build_search_query")
-def test_search_command_passes_new_flags_to_build_search_query(mock_build_query, mock_get_account, mock_account):
+def test_search_command_passes_new_flags_to_build_search_query(
+    mock_build_query, mock_get_account, mock_account
+):
     mock_build_query.return_value = None
     mailbox = MagicMock()
     inbox = MagicMock()
@@ -314,10 +332,13 @@ def test_search_command_passes_new_flags_to_build_search_query(mock_build_query,
     runner.invoke(
         app,
         [
-            "mail", "search",
-            "--subject", "fatura",
+            "mail",
+            "search",
+            "--subject",
+            "fatura",
             "--has-attachments",
-            "--importance", "high",
+            "--importance",
+            "high",
         ],
     )
 
@@ -327,7 +348,9 @@ def test_search_command_passes_new_flags_to_build_search_query(mock_build_query,
     assert kwargs["importance"] == "high"
 
 
-def test_build_search_query_renders_start_date_filter_with_received_date_time(monkeypatch, tmp_path):
+def test_build_search_query_renders_start_date_filter_with_received_date_time(
+    monkeypatch, tmp_path
+):
     monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
     from datetime import datetime
 
@@ -345,7 +368,9 @@ def test_build_search_query_renders_start_date_filter_with_received_date_time(mo
 
 @patch("scriba.commands.mail_cmd.get_account")
 @patch("scriba.commands.mail_cmd._build_search_query")
-def test_search_end_date_is_inclusive_of_the_whole_day(mock_build_query, mock_get_account, mock_account):
+def test_search_end_date_is_inclusive_of_the_whole_day(
+    mock_build_query, mock_get_account, mock_account
+):
     mock_build_query.return_value = None
     mailbox = MagicMock()
     inbox = MagicMock()
@@ -398,4 +423,6 @@ def test_build_search_query_combines_three_filters_including_date(monkeypatch, t
     )
     rendered = query.as_params()["$filter"]
 
-    assert rendered.startswith("isRead eq false and hasAttachments eq true and receivedDateTime ge ")
+    assert rendered.startswith(
+        "isRead eq false and hasAttachments eq true and receivedDateTime ge "
+    )

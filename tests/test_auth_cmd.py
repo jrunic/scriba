@@ -28,7 +28,9 @@ def test_login_without_client_id_and_no_config_fails(mock_load):
 @patch("scriba.commands.auth_cmd.authenticate", return_value=True)
 @patch("scriba.commands.auth_cmd.save_config")
 @patch("scriba.commands.auth_cmd.load_config", return_value={})
-def test_login_with_env_var_saves_config_and_authenticates(mock_load, mock_save, mock_auth, monkeypatch):
+def test_login_with_env_var_saves_config_and_authenticates(
+    mock_load, mock_save, mock_auth, monkeypatch
+):
     monkeypatch.setenv("SCRIBA_CLIENT_ID", "envclient")
     monkeypatch.delenv("SCRIBA_TENANT_ID", raising=False)
 
@@ -41,7 +43,9 @@ def test_login_with_env_var_saves_config_and_authenticates(mock_load, mock_save,
 
 @patch("scriba.commands.auth_cmd.console")
 @patch("scriba.commands.auth_cmd.is_authenticated", return_value=True)
-@patch("scriba.commands.auth_cmd.load_config", return_value={"client_id": "abc", "tenant_id": "common"})
+@patch(
+    "scriba.commands.auth_cmd.load_config", return_value={"client_id": "abc", "tenant_id": "common"}
+)
 def test_status_reports_authenticated(mock_load, mock_is_auth, mock_console):
     result = runner.invoke(app, ["auth", "status"])
 
