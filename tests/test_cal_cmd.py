@@ -202,3 +202,18 @@ def test_resolve_calendar_raises_readable_error_when_nothing_resolves(mock_print
 
     assert raised
     mock_print_error.assert_called_once_with("Calendário não encontrado: não-existe")
+
+
+def test_schedule_get_calendar_signature_still_requires_exactly_one_of_id_or_name():
+    """Trava contra deriva de API — achado de revisão dev-10 (27/09/2026):
+    calendar_id e calendar_name são mutuamente exclusivos, os dois com
+    default None (calendar.py:2044). Se a lib renomear um dos dois,
+    _resolve_calendar quebra silenciosamente sem este teste."""
+    import inspect
+
+    from O365.calendar import Schedule
+
+    sig = inspect.signature(Schedule.get_calendar)
+
+    assert sig.parameters["calendar_id"].default is None
+    assert sig.parameters["calendar_name"].default is None
