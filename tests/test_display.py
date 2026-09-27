@@ -49,3 +49,14 @@ def test_print_mail_table_shows_subject_and_sender(mock_message, captured_consol
     output = captured_console.getvalue()
     assert "Assunto de teste" in output
     assert "remetente@example.com" in output
+
+
+from scriba.display import print_mail_detail
+
+
+def test_print_mail_detail_strips_html_body(mock_message, captured_console):
+    mock_message.body = "<p>Oi</p><br>tudo bem?"
+    print_mail_detail(mock_message)
+    output = captured_console.getvalue()
+    assert "<p>" not in output
+    assert "tudo bem?" in output

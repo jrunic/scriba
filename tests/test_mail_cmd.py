@@ -92,3 +92,29 @@ def test_search_with_no_messages_reports_empty(mock_console, mock_get_account, m
 
     assert result.exit_code == 0
     mock_console.print.assert_called_once_with("Nenhuma mensagem encontrada.")
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+@patch("scriba.commands.mail_cmd.print_mail_detail")
+def test_read_shows_message_body(mock_print_detail, mock_get_account, mock_account, mock_message):
+    mailbox = MagicMock()
+    mailbox.get_message.return_value = mock_message
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["mail", "read", "msg-id-123"])
+
+    assert result.exit_code == 0
+    mock_print_detail.assert_called_once_with(mock_message)
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+def test_read_with_unknown_id_fails(mock_get_account, mock_account):
+    mailbox = MagicMock()
+    mailbox.get_message.return_value = None
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["mail", "read", "id-inexistente"])
+
+    assert result.exit_code == 1

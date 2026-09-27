@@ -5,7 +5,7 @@ from typing import Optional
 import typer
 
 from scriba.auth import get_account
-from scriba.display import console, print_error, print_mail_table, print_success
+from scriba.display import console, print_error, print_mail_detail, print_mail_table, print_success
 
 app = typer.Typer(help="Comandos de e-mail")
 
@@ -66,3 +66,17 @@ def search(
         return
 
     print_mail_table(messages)
+
+
+@app.command()
+def read(message_id: str = typer.Argument(...)) -> None:
+    """Lê uma mensagem por ID."""
+    account = get_account()
+    mailbox = account.mailbox()
+
+    msg = mailbox.get_message(object_id=message_id)
+    if msg is None:
+        print_error(f"Mensagem não encontrada: {message_id}")
+        raise typer.Exit(1)
+
+    print_mail_detail(msg)

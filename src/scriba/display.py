@@ -47,3 +47,17 @@ def print_mail_table(messages: list) -> None:
         table.add_row(sender, subject, object_id)
 
     console.print(table)
+
+
+from rich.panel import Panel
+
+
+def print_mail_detail(msg) -> None:
+    sender = str(getattr(msg, "sender", "") or "Desconhecido")
+    body = getattr(msg, "body", "") or "(vazio)"
+    if looks_like_html(body):
+        body = strip_html(body)
+
+    header = f"[bold]De:[/] {sender}"
+    console.print(Panel(header, title=getattr(msg, "subject", "") or "(sem assunto)", border_style="blue"))
+    console.print(body)
