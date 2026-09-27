@@ -13,6 +13,13 @@ tags: [readme, Python]
 
 [Uma frase sobre o que este projeto entrega — preenchida pela primeira spec.]
 
+## Guias
+
+- [Verificar se a organização está pronta](docs/guias/verificar-prontidao-organizacao.md)
+- [Instalar](docs/guias/instalar.md)
+- [Por que pede login de novo](docs/guias/reautenticacao.md)
+- [Permissões e limites](docs/guias/permissoes-e-limites.md)
+
 ## Para agentes e desenvolvedores
 
 - `CONTEXTO.md` — padrões técnicos e restrições (comece aqui)
