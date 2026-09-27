@@ -60,3 +60,13 @@ def test_print_mail_detail_strips_html_body(mock_message, captured_console):
     output = captured_console.getvalue()
     assert "<p>" not in output
     assert "tudo bem?" in output
+
+
+from scriba.display import print_event_table
+
+
+def test_print_event_table_shows_subject_and_location(mock_event, captured_console):
+    print_event_table([mock_event])
+    output = captured_console.getvalue()
+    assert "Reunião de teste" in output
+    assert "Sala 1" in output

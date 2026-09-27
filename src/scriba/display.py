@@ -61,3 +61,18 @@ def print_mail_detail(msg) -> None:
     header = f"[bold]De:[/] {sender}"
     console.print(Panel(header, title=getattr(msg, "subject", "") or "(sem assunto)", border_style="blue"))
     console.print(body)
+
+
+def print_event_table(events: list) -> None:
+    table = Table(title="Eventos")
+    table.add_column("Assunto", style="white")
+    table.add_column("Início", style="green", max_width=20)
+    table.add_column("Local", style="cyan", max_width=25)
+    table.add_column("ID", style="dim", max_width=36)
+
+    for ev in events:
+        start = ev.start.strftime("%Y-%m-%d %H:%M") if getattr(ev, "start", None) else ""
+        location = getattr(ev, "location", "") or ""
+        table.add_row(getattr(ev, "subject", "") or "", start, str(location), getattr(ev, "object_id", "") or "")
+
+    console.print(table)
