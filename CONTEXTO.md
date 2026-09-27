@@ -144,10 +144,15 @@ Hard limits sempre relevantes durante a sessão (ADR `20260609-eliminacao-do-84-
   bater com o que os 9 comandos entregam de fato.)
 - **Comentários inline:** pt-BR
 - **Slug do repo/CLI:** `scriba`
-- **`Mail.Send` nunca é pedido nem implementado por padrão.** Escopo do app
-  Entra é `Mail.ReadWrite` (rascunho, não envio), `Calendars.ReadWrite`,
-  `offline_access`, `User.Read`. Envio autônomo é decisão de segurança
-  explicitamente fora do escopo — mudar isso é ADR, não PR direto.
+- **`Mail.Send` nunca é pedido nem implementado por padrão.** Escopo
+  explicitamente pedido pelo código (medido via `_get_graph_scopes()`,
+  achado da revisão `dev-10` de 27/09/2026 — a linha anterior aqui citava
+  `offline_access`/`User.Read` como pedidos, o que a medição não confirma):
+  `Mail.ReadWrite` (rascunho, não envio) e `Calendars.ReadWrite`.
+  `offline_access` é concedido implicitamente pelo MSAL a client público, sem
+  aparecer na lista que o código declara; `User.Read` depende da configuração
+  do app registration no portal, não do código. Envio autônomo é decisão de
+  segurança explicitamente fora do escopo — mudar isso é ADR, não PR direto.
 - **Sem client secret em nenhuma hipótese.** Auth é public client + device
   code flow. Se alguma feature futura exigir client credentials (app-only),
   é decisão de segurança que passa por ADR antes do código.
@@ -191,18 +196,22 @@ Hard limits sempre relevantes durante a sessão (ADR `20260609-eliminacao-do-84-
 ## Estado Atual
 
 Segundo incremento (`scriba-20260927-resposta-calendarios-busca`)
-implementado e validado em campo em 27/09/2026 — soma aos 9 comandos do
-v0 mais `mail reply`/`--reply-all`, `cal calendars`, `--calendar` em `cal
-list/read/create`, e `--subject`/`--has-attachments`/`--importance`/
-`--start-date`/`--end-date` em `mail search`. 72 testes verdes, validado em
-macOS e na VM Windows (conta restrita). Um bug real de campo corrigido no
-caminho: a lib `O365` levanta `HTTPError` (não devolve `None`) pra id de
-calendário malformado — ver restrição em `## Restrições`.
+implementado, validado em campo e **aceito** em 27/09/2026 — soma aos 9
+comandos do v0 mais `mail reply`/`--reply-all`, `cal calendars`,
+`--calendar` em `cal list/read/create`, e
+`--subject`/`--has-attachments`/`--importance`/`--start-date`/`--end-date`
+em `mail search`. 72 testes verdes, validado em macOS e na VM Windows (conta
+restrita). Um bug real de campo corrigido no caminho: a lib `O365` levanta
+`HTTPError` (não devolve `None`) pra id de calendário malformado — ver
+restrição em `## Restrições`.
+
+`docs/guias/` ganhou 4 guias how-to (prontidão da organização, instalação,
+reautenticação, permissões e limites), voltados a quem usa o `scriba` por
+trás de um agente de IA — não só a quem desenvolve o repo. Trabalho fora do
+roadmap de incrementos (documentação, sem código de produto).
 
 ## Pendências
 
-- [ ] Aceite formal do incremento 2 contra os critérios de sucesso da spec
-      (fora deste repositório)
 - [ ] Definir o próximo incremento (envio continua fora por decisão de
       segurança)
 
