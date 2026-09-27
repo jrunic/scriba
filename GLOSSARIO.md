@@ -23,5 +23,14 @@ nunca sinônimo ("e-mail" no lugar de "mensagem", "compromisso" no lugar de
 - **Rascunho** — uma mensagem criada mas não enviada, visível na pasta
   Rascunhos do Outlook. `scriba mail draft` cria rascunho; o `scriba` nunca
   envia mensagem.
-- **Evento** — um item da agenda (calendário padrão) da conta. `scriba cal
+- **Evento** — um item da agenda de um calendário da conta. `scriba cal
   list`/`read`/`create` operam sobre eventos.
+- **Calendário** — contêiner de eventos, identificado por nome e id
+  próprios. Toda conta tem um calendário padrão; pode ter outros.
+  `scriba cal calendars` lista os calendários da conta; os demais comandos
+  `cal` aceitam `--calendar` pra apontar pra um específico, e usam o padrão
+  quando omitido.
+- **Resposta** — um rascunho vinculado a uma mensagem existente (distinto
+  de rascunho de mensagem nova), pré-preenchido pelo Graph com
+  destinatário/assunto/citação. `scriba mail reply` cria resposta; como
+  todo rascunho, nunca é enviada automaticamente.
