@@ -31,6 +31,34 @@ def calendars() -> None:
     print_calendar_table(cals)
 
 
+def _resolve_calendar(schedule, calendar: str | None):
+    """Resolve `--calendar` (nome ou id) pro objeto Calendar da lib.
+
+    `Schedule.get_calendar()` exige escolher `calendar_id=` OU
+    `calendar_name=`, nunca os dois (RuntimeError se ambos ou nenhum —
+    achado de revisão dev-10, calendar.py:2044). A CLI recebe uma string
+    opaca; tenta `calendar_id` primeiro — id inválido faz a lib devolver
+    `None` (não levanta).
+    """
+    if calendar is None:
+        default = schedule.get_default_calendar()
+        if default is None:
+            print_error("Não foi possível acessar o calendário padrão.")
+            raise typer.Exit(1)
+        return default
+
+    found = schedule.get_calendar(calendar_id=calendar)
+    if found is not None:
+        return found
+
+    found = schedule.get_calendar(calendar_name=calendar)
+    if found is not None:
+        return found
+
+    print_error(f"Calendário não encontrado: {calendar}")
+    raise typer.Exit(1)
+
+
 def _parse_date(value: str) -> datetime:
     try:
         return datetime.strptime(value, "%Y-%m-%d")  # noqa: DTZ007 — fuso local, spec assumption 8

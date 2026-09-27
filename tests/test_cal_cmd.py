@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from typer.testing import CliRunner
 
@@ -156,3 +156,49 @@ def test_calendars_with_none_reports_empty(mock_console, mock_get_account, mock_
 
     assert result.exit_code == 0
     mock_console.print.assert_called_once_with("Nenhum calendário encontrado.")
+
+
+def test_resolve_calendar_tries_calendar_id_first(mock_calendar):
+    from scriba.commands.cal_cmd import _resolve_calendar
+
+    schedule = MagicMock()
+    schedule.get_calendar.return_value = mock_calendar
+
+    result = _resolve_calendar(schedule, "cal-id-default")
+
+    assert result is mock_calendar
+    schedule.get_calendar.assert_called_once_with(calendar_id="cal-id-default")
+
+
+def test_resolve_calendar_falls_back_to_calendar_name(mock_calendar_secondary):
+    from scriba.commands.cal_cmd import _resolve_calendar
+
+    schedule = MagicMock()
+    schedule.get_calendar.side_effect = [None, mock_calendar_secondary]
+
+    result = _resolve_calendar(schedule, "Trabalho")
+
+    assert result is mock_calendar_secondary
+    assert schedule.get_calendar.call_args_list == [
+        call(calendar_id="Trabalho"),
+        call(calendar_name="Trabalho"),
+    ]
+
+
+@patch("scriba.commands.cal_cmd.print_error")
+def test_resolve_calendar_raises_readable_error_when_nothing_resolves(mock_print_error):
+    from scriba.commands.cal_cmd import _resolve_calendar
+    import typer
+
+    schedule = MagicMock()
+    schedule.get_calendar.return_value = None
+
+    try:
+        _resolve_calendar(schedule, "não-existe")
+        raised = False
+    except typer.Exit as exc:
+        raised = True
+        assert exc.exit_code == 1
+
+    assert raised
+    mock_print_error.assert_called_once_with("Calendário não encontrado: não-existe")
