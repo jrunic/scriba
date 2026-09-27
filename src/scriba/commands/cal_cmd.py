@@ -101,19 +101,18 @@ def list_events(
 
 
 @app.command()
-def read(event_id: str = typer.Argument(...)) -> None:
+def read(
+    event_id: str = typer.Argument(...),
+    calendar: str | None = typer.Option(None, "--calendar"),
+) -> None:
     """Lê um evento por ID."""
     account = get_account()
     schedule = account.schedule()
-    calendar = schedule.get_default_calendar()
+    calendar_obj = _resolve_calendar(schedule, calendar)
 
-    if calendar is None:
-        print_error("Não foi possível acessar o calendário padrão.")
-        raise typer.Exit(1)
-
-    # get_event() recebe o id posicional — achado de campo, mesma sessão:
+    # get_event() recebe o id posicional — achado de campo, v0:
     # `object_id=` não é keyword aceita aqui (diferente de get_message).
-    event = calendar.get_event(event_id)
+    event = calendar_obj.get_event(event_id)
     if not event:
         print_error(f"Evento não encontrado: {event_id}")
         raise typer.Exit(1)
