@@ -187,8 +187,9 @@ def test_resolve_calendar_falls_back_to_calendar_name(mock_calendar_secondary):
 
 @patch("scriba.commands.cal_cmd.print_error")
 def test_resolve_calendar_raises_readable_error_when_nothing_resolves(mock_print_error):
-    from scriba.commands.cal_cmd import _resolve_calendar
     import typer
+
+    from scriba.commands.cal_cmd import _resolve_calendar
 
     schedule = MagicMock()
     schedule.get_calendar.return_value = None

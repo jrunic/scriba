@@ -337,7 +337,7 @@ def test_build_search_query_renders_start_date_filter_with_received_date_time(mo
     account = _build_account(client_id="dummy-client-id", tenant_id="common")
     mailbox = account.mailbox()
 
-    query = _build_search_query(mailbox, unread=False, sender=None, start_date=datetime(2026, 9, 1))
+    query = _build_search_query(mailbox, unread=False, sender=None, start_date=datetime(2026, 9, 1))  # noqa: DTZ001 — fuso local, spec assumption 8
     rendered = query.as_params()["$filter"]
 
     assert rendered.startswith("receivedDateTime ge ")
@@ -394,7 +394,7 @@ def test_build_search_query_combines_three_filters_including_date(monkeypatch, t
         unread=True,
         sender=None,
         has_attachments=True,
-        start_date=datetime(2026, 9, 1),
+        start_date=datetime(2026, 9, 1),  # noqa: DTZ001 — fuso local, spec assumption 8
     )
     rendered = query.as_params()["$filter"]
 
