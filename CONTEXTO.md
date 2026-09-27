@@ -182,15 +182,13 @@ Hard limits sempre relevantes durante a sessão (ADR `20260609-eliminacao-do-84-
 Primeiro incremento (`scriba-20260917-validacao-de-campo`) implementado e
 validado em campo em 27/09/2026 — 9 comandos (`auth login/status/logout`,
 `mail search/read/draft`, `cal list/read/create`), 46 testes verdes,
-validado em macOS e numa VM Windows real (bancada `koine-restrito`). Os
-12 critérios da spec estão cumpridos; incremento pronto pra
-`neg-05-aceita-ciclo`.
+validado em macOS e numa VM Windows real, cenário de conta restrita (só
+`cmd`, sem PowerShell).
 
 ## Pendências
 
-- [ ] `neg-05-aceita-ciclo` do incremento `scriba-20260917-validacao-de-campo`
-- [ ] Cancelar o trial Microsoft 365 Business Standard e reverter o DNS de
-      `orlandoferreira.com.br` até 22/10/2026 (jd-task #1055, fora deste repo)
+- [ ] Aceite formal do incremento contra os critérios de sucesso da spec
+      (fora deste repositório)
 - [ ] Definir o próximo incremento (envio fica fora por decisão de segurança;
       candidatos: mais filtros de busca, suporte a múltiplos calendários)
 
