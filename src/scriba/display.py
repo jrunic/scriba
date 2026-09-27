@@ -107,3 +107,14 @@ def print_event_detail(event) -> None:
 
     console.print(Panel(header, title=getattr(event, "subject", "") or "(sem assunto)", border_style="green"))
     console.print(body)
+
+
+def print_calendar_table(calendars: list) -> None:
+    table = Table(title="Calendários")
+    table.add_column("Nome", style="white")
+    table.add_column("ID", style="dim", max_width=48)
+
+    for cal in calendars:
+        table.add_row(getattr(cal, "name", "") or "", getattr(cal, "calendar_id", "") or "")
+
+    console.print(table)

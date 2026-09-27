@@ -128,3 +128,31 @@ def test_create_reports_failure_when_save_returns_false(mock_get_account, mock_a
     )
 
     assert result.exit_code == 1
+
+
+@patch("scriba.commands.cal_cmd.get_account")
+@patch("scriba.commands.cal_cmd.print_calendar_table")
+def test_calendars_lists_accounts_calendars(mock_print_table, mock_get_account, mock_account, mock_calendar):
+    schedule = MagicMock()
+    schedule.list_calendars.return_value = [mock_calendar]
+    mock_account.schedule.return_value = schedule
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["cal", "calendars"])
+
+    assert result.exit_code == 0
+    mock_print_table.assert_called_once_with([mock_calendar])
+
+
+@patch("scriba.commands.cal_cmd.get_account")
+@patch("scriba.commands.cal_cmd.console")
+def test_calendars_with_none_reports_empty(mock_console, mock_get_account, mock_account):
+    schedule = MagicMock()
+    schedule.list_calendars.return_value = []
+    mock_account.schedule.return_value = schedule
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["cal", "calendars"])
+
+    assert result.exit_code == 0
+    mock_console.print.assert_called_once_with("Nenhum calendário encontrado.")

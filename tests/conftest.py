@@ -27,6 +27,22 @@ def mock_message():
 
 
 @pytest.fixture
+def mock_calendar():
+    cal = MagicMock()
+    cal.name = "Calendário"
+    cal.calendar_id = "cal-id-default"
+    return cal
+
+
+@pytest.fixture
+def mock_calendar_secondary():
+    cal = MagicMock()
+    cal.name = "Trabalho"
+    cal.calendar_id = "cal-id-trabalho"
+    return cal
+
+
+@pytest.fixture
 def mock_event():
     ev = MagicMock()
     ev.subject = "Reunião de teste"

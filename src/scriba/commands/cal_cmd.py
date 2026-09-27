@@ -7,6 +7,7 @@ import typer
 from scriba.auth import get_account
 from scriba.display import (
     console,
+    print_calendar_table,
     print_error,
     print_event_detail,
     print_event_table,
@@ -14,6 +15,20 @@ from scriba.display import (
 )
 
 app = typer.Typer(help="Comandos de agenda")
+
+
+@app.command()
+def calendars() -> None:
+    """Lista os calendários da conta (nome e id)."""
+    account = get_account()
+    schedule = account.schedule()
+
+    cals = schedule.list_calendars()
+    if not cals:
+        console.print("Nenhum calendário encontrado.")
+        return
+
+    print_calendar_table(cals)
 
 
 def _parse_date(value: str) -> datetime:
