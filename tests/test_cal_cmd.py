@@ -84,3 +84,43 @@ def test_read_with_unknown_id_fails(mock_get_account, mock_account):
     result = runner.invoke(app, ["cal", "read", "id-inexistente"])
 
     assert result.exit_code == 1
+
+
+@patch("scriba.commands.cal_cmd.get_account")
+def test_create_saves_event_with_subject_and_times(mock_get_account, mock_account):
+    schedule = MagicMock()
+    calendar = MagicMock()
+    new_event = MagicMock()
+    new_event.save.return_value = True
+    calendar.new_event.return_value = new_event
+    schedule.get_default_calendar.return_value = calendar
+    mock_account.schedule.return_value = schedule
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(
+        app,
+        ["cal", "create", "--subject", "Reunião", "--start", "2026-10-08 12:00", "--end", "2026-10-08 13:00"],
+    )
+
+    assert result.exit_code == 0
+    assert new_event.subject == "Reunião"
+    new_event.save.assert_called_once()
+
+
+@patch("scriba.commands.cal_cmd.get_account")
+def test_create_reports_failure_when_save_returns_false(mock_get_account, mock_account):
+    schedule = MagicMock()
+    calendar = MagicMock()
+    new_event = MagicMock()
+    new_event.save.return_value = False
+    calendar.new_event.return_value = new_event
+    schedule.get_default_calendar.return_value = calendar
+    mock_account.schedule.return_value = schedule
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(
+        app,
+        ["cal", "create", "--subject", "Reunião", "--start", "2026-10-08 12:00", "--end", "2026-10-08 13:00"],
+    )
+
+    assert result.exit_code == 1
