@@ -39,3 +39,13 @@ def test_strip_html_converts_br_and_p_to_newlines():
 
 def test_strip_html_unescapes_entities():
     assert strip_html("A&nbsp;B") == "A B"
+
+
+from scriba.display import print_mail_table
+
+
+def test_print_mail_table_shows_subject_and_sender(mock_message, captured_console):
+    print_mail_table([mock_message])
+    output = captured_console.getvalue()
+    assert "Assunto de teste" in output
+    assert "remetente@example.com" in output

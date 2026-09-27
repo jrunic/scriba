@@ -29,3 +29,21 @@ def strip_html(text: str) -> str:
 
 def looks_like_html(text: str) -> bool:
     return bool(re.search(r"<(html|div|p|br|table)\b", text, re.IGNORECASE))
+
+
+from rich.table import Table
+
+
+def print_mail_table(messages: list) -> None:
+    table = Table(title="Mensagens")
+    table.add_column("De", style="cyan", max_width=30)
+    table.add_column("Assunto", style="white")
+    table.add_column("ID", style="dim", max_width=36)
+
+    for msg in messages:
+        sender = str(getattr(msg, "sender", "") or "")
+        subject = getattr(msg, "subject", "") or ""
+        object_id = getattr(msg, "object_id", "") or ""
+        table.add_row(sender, subject, object_id)
+
+    console.print(table)

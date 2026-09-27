@@ -40,3 +40,55 @@ def test_draft_reports_failure_when_save_draft_returns_false(mock_get_account, m
     )
 
     assert result.exit_code == 1
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+@patch("scriba.commands.mail_cmd.print_mail_table")
+def test_search_lists_unread_only(mock_print_table, mock_get_account, mock_account, mock_message):
+    mailbox = MagicMock()
+    inbox = MagicMock()
+    inbox.get_messages.return_value = [mock_message]
+    mailbox.inbox_folder.return_value = inbox
+    mailbox.new_query.return_value = MagicMock()
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["mail", "search", "--unread"])
+
+    assert result.exit_code == 0
+    mock_print_table.assert_called_once_with([mock_message])
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+@patch("scriba.commands.mail_cmd.print_mail_table")
+def test_search_combines_unread_and_sender_filters(mock_print_table, mock_get_account, mock_account, mock_message):
+    mailbox = MagicMock()
+    inbox = MagicMock()
+    inbox.get_messages.return_value = [mock_message]
+    mailbox.inbox_folder.return_value = inbox
+    query = MagicMock()
+    mailbox.new_query.return_value = query
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["mail", "search", "--unread", "--from", "alice@example.com"])
+
+    assert result.exit_code == 0
+    query.on_attribute.assert_any_call("isRead")
+    query.chain.assert_any_call("and")
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+@patch("scriba.commands.mail_cmd.console")
+def test_search_with_no_messages_reports_empty(mock_console, mock_get_account, mock_account):
+    mailbox = MagicMock()
+    inbox = MagicMock()
+    inbox.get_messages.return_value = []
+    mailbox.inbox_folder.return_value = inbox
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["mail", "search"])
+
+    assert result.exit_code == 0
+    mock_console.print.assert_called_once_with("Nenhuma mensagem encontrada.")
