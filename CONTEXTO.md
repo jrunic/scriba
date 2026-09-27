@@ -139,7 +139,9 @@ documentos internos do autor.
 Hard limits sempre relevantes durante a sessão (ADR `20260609-eliminacao-do-84-ia.md` — substitui antigo `docs/84-ia/restricoes.md`).
 
 - **Runner de testes canônico:** `uv run pytest tests/ -v`
-- **Idioma da saída para humano:** inglês (CLI pública, audiência não é só pt-BR)
+- **Idioma da saída para humano:** pt-BR. (Divergência do que este arquivo
+  dizia antes — "inglês" — nunca foi seguida; corrigido em 27/09/2026 pra
+  bater com o que os 9 comandos entregam de fato.)
 - **Comentários inline:** pt-BR
 - **Slug do repo/CLI:** `scriba`
 - **`Mail.Send` nunca é pedido nem implementado por padrão.** Escopo do app
@@ -150,6 +152,17 @@ Hard limits sempre relevantes durante a sessão (ADR `20260609-eliminacao-do-84-
   code flow. Se alguma feature futura exigir client credentials (app-only),
   é decisão de segurança que passa por ADR antes do código.
 - **Implementação que contradiz `docs/dominio/` ou `GLOSSARIO.md` atualiza o doc no mesmo commit;** divergência que vira decisão arquitetural → dev-07-cria-adr (ADR `20260705-familia-neg-skills-negocio`)
+- **A API de query da lib `O365` instalada (2.1.10) não é a dos tutoriais
+  antigos.** `new_query()` não aceita argumento; não existe
+  `on_attribute()`/`chain()`. `QueryBuilder.equals()`/`.contains()`/
+  `.greater_equal()` recebem `(atributo, valor)` direto e devolvem um
+  `CompositeFilter` que se combina com `&`/`|`. Atributo de campo composto
+  (ex.: remetente) é a chave curta do mapeamento (`"from"`), não o path
+  Graph completo — a lib expande sozinha. Achado de campo (bancada
+  Windows, 27/09/2026) que a suíte mockada não pega sozinha: qualquer
+  código novo que construa `Query` deve ter pelo menos um teste contra um
+  objeto `O365` real (padrão em `tests/test_mail_cmd.py::test_build_search_query_*`),
+  não só mock.
 
 
 ## Decisões Herdadas (explícitas)
@@ -166,13 +179,20 @@ Hard limits sempre relevantes durante a sessão (ADR `20260609-eliminacao-do-84-
 
 ## Estado Atual
 
-Projeto criado em 2026-09-17 via `dev-01-define-padroes`. Aguardando primeira spec via `dev-02-escreve-spec`.
+Primeiro incremento (`scriba-20260917-validacao-de-campo`) implementado e
+validado em campo em 27/09/2026 — 9 comandos (`auth login/status/logout`,
+`mail search/read/draft`, `cal list/read/create`), 46 testes verdes,
+validado em macOS e numa VM Windows real (bancada `koine-restrito`). Os
+12 critérios da spec estão cumpridos; incremento pronto pra
+`neg-05-aceita-ciclo`.
 
 ## Pendências
 
-- [ ] Primeira spec via dev-02-escreve-spec
-- [ ] Primeiro plano via dev-03-escreve-plano
-- [ ] Setup de testes (framework + pasta + primeiro teste exemplar)
+- [ ] `neg-05-aceita-ciclo` do incremento `scriba-20260917-validacao-de-campo`
+- [ ] Cancelar o trial Microsoft 365 Business Standard e reverter o DNS de
+      `orlandoferreira.com.br` até 22/10/2026 (jd-task #1055, fora deste repo)
+- [ ] Definir o próximo incremento (envio fica fora por decisão de segurança;
+      candidatos: mais filtros de busca, suporte a múltiplos calendários)
 
 ## Referências
 
