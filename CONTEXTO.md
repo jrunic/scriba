@@ -190,18 +190,21 @@ Hard limits sempre relevantes durante a sessão (ADR `20260609-eliminacao-do-84-
 
 ## Estado Atual
 
-Primeiro incremento (`scriba-20260917-validacao-de-campo`) implementado e
-validado em campo em 27/09/2026 — 9 comandos (`auth login/status/logout`,
-`mail search/read/draft`, `cal list/read/create`), 46 testes verdes,
-validado em macOS e numa VM Windows real, cenário de conta restrita (só
-`cmd`, sem PowerShell).
+Segundo incremento (`scriba-20260927-resposta-calendarios-busca`)
+implementado e validado em campo em 27/09/2026 — soma aos 9 comandos do
+v0 mais `mail reply`/`--reply-all`, `cal calendars`, `--calendar` em `cal
+list/read/create`, e `--subject`/`--has-attachments`/`--importance`/
+`--start-date`/`--end-date` em `mail search`. 72 testes verdes, validado em
+macOS e na VM Windows (conta restrita). Um bug real de campo corrigido no
+caminho: a lib `O365` levanta `HTTPError` (não devolve `None`) pra id de
+calendário malformado — ver restrição em `## Restrições`.
 
 ## Pendências
 
-- [ ] Aceite formal do incremento contra os critérios de sucesso da spec
+- [ ] Aceite formal do incremento 2 contra os critérios de sucesso da spec
       (fora deste repositório)
-- [ ] Definir o próximo incremento (envio fica fora por decisão de segurança;
-      candidatos: mais filtros de busca, suporte a múltiplos calendários)
+- [ ] Definir o próximo incremento (envio continua fora por decisão de
+      segurança)
 
 ## Referências
 
