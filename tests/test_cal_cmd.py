@@ -217,3 +217,18 @@ def test_schedule_get_calendar_signature_still_requires_exactly_one_of_id_or_nam
 
     assert sig.parameters["calendar_id"].default is None
     assert sig.parameters["calendar_name"].default is None
+
+
+@patch("scriba.commands.cal_cmd.get_account")
+def test_list_with_calendar_option_operates_on_named_calendar(mock_get_account, mock_account, mock_calendar_secondary, mock_event):
+    schedule = MagicMock()
+    schedule.get_calendar.side_effect = [None, mock_calendar_secondary]
+    mock_calendar_secondary.get_events.return_value = [mock_event]
+    mock_account.schedule.return_value = schedule
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(app, ["cal", "list", "--calendar", "Trabalho"])
+
+    assert result.exit_code == 0
+    mock_calendar_secondary.get_events.assert_called_once()
+    schedule.get_default_calendar.assert_not_called()

@@ -72,6 +72,7 @@ def list_events(
     start: str | None = typer.Option(None, "--start"),
     end: str | None = typer.Option(None, "--end"),
     limit: int = typer.Option(25, "--limit"),
+    calendar: str | None = typer.Option(None, "--calendar"),
 ) -> None:
     """Lista eventos num intervalo (default: próximos 7 dias)."""
     start_dt = (
@@ -83,18 +84,14 @@ def list_events(
 
     account = get_account()
     schedule = account.schedule()
-    calendar = schedule.get_default_calendar()
-
-    if calendar is None:
-        print_error("Não foi possível acessar o calendário padrão.")
-        raise typer.Exit(1)
+    calendar_obj = _resolve_calendar(schedule, calendar)
 
     # `get_events(include_recurring=True)` (default) exige start_recurring/
     # end_recurring — não um Query genérico de start/end. Achado de campo
     # (VM Windows, 27/09/2026): `new_query("start")` não existe na lib
     # instalada (`new_query()` não aceita argumento) e `get_events` sem
     # esses dois parâmetros levanta ValueError com include_recurring=True.
-    events = list(calendar.get_events(limit=limit, start_recurring=start_dt, end_recurring=end_dt))
+    events = list(calendar_obj.get_events(limit=limit, start_recurring=start_dt, end_recurring=end_dt))
 
     if not events:
         console.print("Nenhum evento encontrado no intervalo.")
