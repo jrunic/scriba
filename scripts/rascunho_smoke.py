@@ -38,7 +38,7 @@ def main() -> None:
         print("Defina SCRIBA_CLIENT_ID antes de rodar.", file=sys.stderr)
         sys.exit(1)
 
-    print("Autenticando via device code flow...")
+    print("Autenticando via authorization code flow com PKCE...")
     if not authenticate(client_id, tenant_id):
         print("FALHA: autenticação não completou.", file=sys.stderr)
         sys.exit(1)

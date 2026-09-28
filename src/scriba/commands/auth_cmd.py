@@ -14,7 +14,7 @@ def login(
     client_id: str | None = typer.Option(None, "--client-id", envvar="SCRIBA_CLIENT_ID"),
     tenant_id: str = typer.Option("common", "--tenant-id", envvar="SCRIBA_TENANT_ID"),
 ) -> None:
-    """Autentica via device code flow."""
+    """Autentica via authorization code flow com PKCE (login pelo navegador)."""
     config = load_config()
 
     if client_id:

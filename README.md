@@ -21,6 +21,7 @@ Nunca envia e-mail — decisão de segurança, não limitação técnica.
 ## Guias
 
 - [Verificar se a organização está pronta](docs/guias/verificar-prontidao-organizacao.md)
+- [Cadastrar e configurar o app no Microsoft Entra](docs/guias/cadastrar-app-entra.md) — para a equipe de TI
 - [Instalar](docs/guias/instalar.md)
 - [Por que pede login de novo](docs/guias/reautenticacao.md)
 - [Permissões e limites](docs/guias/permissoes-e-limites.md)
