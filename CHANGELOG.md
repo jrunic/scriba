@@ -13,6 +13,22 @@ tags: [changelog, scriba]
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [0.2.1] — 2026-09-28
+
+### Adicionado
+
+- Guia [cadastrar e configurar o app no Microsoft Entra](docs/guias/cadastrar-app-entra.md),
+  voltado à equipe de TI da organização que vai autorizar o `scriba` —
+  cadastro do app registration, Redirect URI, permissões delegadas e como
+  revogar o acesso.
+
+### Corrigido
+
+- Resíduo de texto sobrevivente da troca de fluxo de auth (0.2.0):
+  docstring do comando `auth login` (aparecia em `--help`), mensagem de um
+  script de smoke test, e uma entrada do `GLOSSARIO.md` ainda citavam
+  "device code flow". Sem mudança de comportamento — só texto.
+
 ## [0.2.0] — 2026-09-28
 
 ### Alterado
