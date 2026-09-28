@@ -92,10 +92,11 @@ ou o `python3 -c "from scriba.main import app; app()" <comando>`).
 ```
 scriba auth login --client-id <client-id>
 ```
-Esperado: o comando imprime uma URL e um código de 8-9 caracteres, e fica
-esperando. **Este é o ponto em que o humano entra — repassar a URL e o
-código a ele agora** (ver Trilha do humano abaixo). O comando só retorna
-depois que o humano completa o login no navegador.
+Esperado: o comando abre o navegador padrão da máquina sozinho, numa tela
+de login da Microsoft. **Este é o ponto em que o humano entra — confirmar
+o login e o consentimento na janela que abriu** (ver Trilha do humano
+abaixo). O comando só retorna depois que o humano completa o login no
+navegador, ou depois de 5 minutos sem resposta (timeout).
 
 Ao retornar: `OK: Autenticado com sucesso.`
 
@@ -130,10 +131,10 @@ não foi atendido.
 O agente de IA vai instalar tudo por você. A única parte que só você pode
 fazer:
 
-1. O agente vai te passar um endereço e um código.
-2. Abra esse endereço no seu navegador normal.
-3. Digite o código exatamente como foi passado.
-4. Faça login com a sua conta Microsoft normal (a mesma que você usa no
+1. Uma janela do seu navegador vai abrir sozinha, numa tela de login da
+   Microsoft.
+2. Faça login com a sua conta Microsoft normal (a mesma que você usa no
    Outlook/Teams do trabalho) e confirme o acesso quando pedido.
+3. A aba mostra uma confirmação de que o login terminou — pode fechá-la.
 
 É só isso — depois de confirmar, volte a deixar o agente continuar.
