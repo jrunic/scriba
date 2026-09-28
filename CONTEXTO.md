@@ -226,6 +226,12 @@ Defaults bloqueia device code por padrão em todo tenant novo desde
 (github.com/jrunic/scriba/releases/tag/v0.2.0, 28/09/2026) — primeira
 release desde a `v0.1.0`.
 
+Guia `docs/guias/cadastrar-app-entra.md` adicionado (voltado à equipe de TI
+que autoriza o app no Microsoft Entra) e resíduo de texto "device code"
+corrigido em 3 pontos fora do alcance da varredura do incremento 3
+(docstring do comando, script de smoke test, glossário). Publicado como
+release `v0.2.1` (28/09/2026).
+
 ## Pendências
 
 - [ ] Definir o próximo incremento (envio continua fora por decisão de
