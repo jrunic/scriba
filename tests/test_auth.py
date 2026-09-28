@@ -34,13 +34,14 @@ def test_authenticate_opens_real_authorization_url_via_loopback(monkeypatch, tmp
         opened_urls.append(url)
         state = parse_qs(urlparse(url).query)["state"][0]
         fake_server.callback_url = (
-            f"http://localhost:54321/?error=access_denied"
-            f"&error_description=denied&state={state}"
+            f"http://localhost:54321/?error=access_denied&error_description=denied&state={state}"
         )
 
-    with patch("scriba.auth.HTTPServer", return_value=fake_server), \
-         patch("scriba.auth.webbrowser.open", side_effect=_fake_open) as mock_open, \
-         patch("scriba.auth._capture_callback_url", side_effect=lambda server: server.callback_url):
+    with (
+        patch("scriba.auth.HTTPServer", return_value=fake_server),
+        patch("scriba.auth.webbrowser.open", side_effect=_fake_open) as mock_open,
+        patch("scriba.auth._capture_callback_url", side_effect=lambda server: server.callback_url),
+    ):
         result = auth.authenticate("dummy-client-id", "common")
 
     assert result is False
@@ -60,10 +61,12 @@ def test_authenticate_returns_false_on_state_mismatch_without_traceback(monkeypa
         "&error_description=denied&state=state-que-nao-bate"
     )
 
-    with patch("scriba.auth.HTTPServer", return_value=fake_server), \
-         patch("scriba.auth.webbrowser.open"), \
-         patch("scriba.auth._capture_callback_url", side_effect=lambda server: server.callback_url), \
-         patch("scriba.auth.print_error") as mock_print_error:
+    with (
+        patch("scriba.auth.HTTPServer", return_value=fake_server),
+        patch("scriba.auth.webbrowser.open"),
+        patch("scriba.auth._capture_callback_url", side_effect=lambda server: server.callback_url),
+        patch("scriba.auth.print_error") as mock_print_error,
+    ):
         result = auth.authenticate("dummy-client-id", "common")
 
     assert result is False
@@ -73,9 +76,11 @@ def test_authenticate_returns_false_on_state_mismatch_without_traceback(monkeypa
 def test_authenticate_returns_false_and_pt_br_error_on_timeout(monkeypatch, tmp_path):
     monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
 
-    with patch("scriba.auth.webbrowser.open"), \
-         patch("scriba.auth.CALLBACK_TIMEOUT_SECONDS", 0.05), \
-         patch("scriba.auth.print_error") as mock_print_error:
+    with (
+        patch("scriba.auth.webbrowser.open"),
+        patch("scriba.auth.CALLBACK_TIMEOUT_SECONDS", 0.05),
+        patch("scriba.auth.print_error") as mock_print_error,
+    ):
         result = auth.authenticate("dummy-client-id", "common")
 
     assert result is False

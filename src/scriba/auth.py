@@ -29,9 +29,7 @@ class _CallbackHandler(BaseHTTPRequestHandler):
     """Captura a URL de callback do navegador numa página de confirmação."""
 
     def do_GET(self) -> None:
-        self.server.callback_url = (
-            f"http://localhost:{self.server.server_port}{self.path}"
-        )
+        self.server.callback_url = f"http://localhost:{self.server.server_port}{self.path}"
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
