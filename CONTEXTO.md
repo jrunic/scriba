@@ -16,7 +16,8 @@ tags: [contexto, dev-skills, Python]
 CLI Python que dá a um agente de IA acesso a e-mail e agenda do Microsoft 365
 (Outlook) via Microsoft Graph — leitura de e-mail, criação de rascunho, leitura
 e criação de eventos de calendário. Autenticação delegada por usuário via
-device code flow (MSAL), sem client secret. Envio autônomo de e-mail é fora de
+authorization code flow + PKCE (MSAL, loopback local), sem client secret.
+Envio autônomo de e-mail é fora de
 escopo por decisão de segurança, não técnica.
 
 ## Agente padrão
@@ -29,8 +30,9 @@ escopo por decisão de segurança, não técnica.
 - **Linguagem:** Python 3.12+
 - **Framework CLI:** Typer + Rich (formatação de terminal)
 - **Cliente Microsoft Graph:** O365 (github.com/O365/python-o365) sobre MSAL
-  (device code flow, public client, sem secret) — ver `docs/decisoes/` para a
-  avaliação contra `msgraph-sdk` oficial
+  (authorization code flow + PKCE via loopback, public client, sem secret) —
+  ver `docs/decisoes/` para a avaliação contra `msgraph-sdk` oficial e a
+  troca de fluxo (`20260928-fluxo-de-auth-troca-device-code-por-auth-code-pkce`)
 - **Banco:** nenhum — estado é config + token OAuth em disco
 - **Deploy:** distribuição manual/local por enquanto (instalação via `uv`/`pip`
   na máquina do usuário); sem `upgrade-fleet`, sem systemd, sem cron
@@ -52,8 +54,9 @@ convenção da linguagem/comunidade, não o padrão PT-BR do brain.
 
 ### Segredos
 
-- **Onde:** nenhum segredo de aplicação. Auth é public client + device code
-  flow (MSAL) — sem client secret, sem certificado. O `client_id`/`tenant_id`
+- **Onde:** nenhum segredo de aplicação. Auth é public client + authorization
+  code flow com PKCE (MSAL, loopback local) — sem client secret, sem
+  certificado. O `client_id`/`tenant_id`
   do app Entra não são segredos (config de usuário). O token OAuth por usuário
   fica em disco local, sob XDG (ver Estrutura) — nunca versionado, nunca em
   `jedi-secrets` (não é credencial da frota, é credencial pessoal do usuário
@@ -153,9 +156,14 @@ Hard limits sempre relevantes durante a sessão (ADR `20260609-eliminacao-do-84-
   aparecer na lista que o código declara; `User.Read` depende da configuração
   do app registration no portal, não do código. Envio autônomo é decisão de
   segurança explicitamente fora do escopo — mudar isso é ADR, não PR direto.
-- **Sem client secret em nenhuma hipótese.** Auth é public client + device
-  code flow. Se alguma feature futura exigir client credentials (app-only),
-  é decisão de segurança que passa por ADR antes do código.
+- **Sem client secret em nenhuma hipótese.** Auth é public client +
+  authorization code flow com PKCE (loopback local). Se alguma feature
+  futura exigir client credentials (app-only), é decisão de segurança que
+  passa por ADR antes do código.
+- **Redirect URI `http://localhost` (sem porta fixa) é pré-condição do app
+  registration.** Quem administra o tenant onde o `scriba` roda precisa
+  cadastrar esse Redirect URI antes do primeiro login — sem ele,
+  `get_authorization_url()` falha. Ver `docs/guias/instalar.md`.
 - **Implementação que contradiz `docs/dominio/` ou `GLOSSARIO.md` atualiza o doc no mesmo commit;** divergência que vira decisão arquitetural → dev-07-cria-adr (ADR `20260705-familia-neg-skills-negocio`)
 - **A API de query da lib `O365` instalada (2.1.10) não é a dos tutoriais
   antigos.** `new_query()` não aceita argumento; não existe
