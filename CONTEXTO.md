@@ -218,10 +218,24 @@ reautenticação, permissões e limites), voltados a quem usa o `scriba` por
 trás de um agente de IA — não só a quem desenvolve o repo. Trabalho fora do
 roadmap de incrementos (documentação, sem código de produto).
 
+Terceiro incremento (`scriba-20260928-troca-fluxo-auth`) implementado,
+validado em campo e **aceito** em 28/09/2026 — troca device code flow por
+authorization code flow + PKCE via loopback local (Microsoft Entra Security
+Defaults bloqueia device code por padrão em todo tenant novo desde
+01/07/2026). 75 testes verdes. Publicado como release `v0.2.0`
+(github.com/jrunic/scriba/releases/tag/v0.2.0, 28/09/2026) — primeira
+release desde a `v0.1.0`.
+
 ## Pendências
 
 - [ ] Definir o próximo incremento (envio continua fora por decisão de
       segurança)
+- [ ] Login via canal sem sessão gráfica interativa (SSH puro, tarefa
+      agendada) não abre o navegador visivelmente — achado de campo do
+      incremento 3, documentado em `docs/guias/instalar.md`, mas sem
+      solução própria ainda. Considerar se algum incremento futuro precisa
+      de um mecanismo alternativo pra esse cenário (ex.: exibir a URL como
+      fallback se o navegador não responder em N segundos).
 
 ## Referências
 
