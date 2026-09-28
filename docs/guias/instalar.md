@@ -100,6 +100,15 @@ navegador, ou depois de 5 minutos sem resposta (timeout).
 
 Ao retornar: `OK: Autenticado com sucesso.`
 
+**Este passo precisa rodar numa sessão com acesso à tela** — o comando não
+funciona disparado por um canal que roda fora da sessão gráfica do usuário
+(SSH puro, tarefa agendada, execução remota sem `-interactive`). Medido em
+validação de campo: o processo sobe, o navegador chega a ser lançado, mas
+nenhuma janela aparece — o comando trava até o timeout de 5 minutos, sem
+erro claro do motivo. Se o agente de IA opera por um desses canais, rodar
+este passo específico de outra forma — direto no console da máquina, ou por
+um agente que já executa dentro da sessão gráfica.
+
 **5. Confirmar**
 
 ```
