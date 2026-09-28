@@ -68,3 +68,18 @@ def test_authenticate_returns_false_on_state_mismatch_without_traceback(monkeypa
 
     assert result is False
     mock_print_error.assert_called_once_with("Autenticação falhou.")
+
+
+def test_authenticate_returns_false_and_pt_br_error_on_timeout(monkeypatch, tmp_path):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+
+    with patch("scriba.auth.webbrowser.open"), \
+         patch("scriba.auth.CALLBACK_TIMEOUT_SECONDS", 0.05), \
+         patch("scriba.auth.print_error") as mock_print_error:
+        result = auth.authenticate("dummy-client-id", "common")
+
+    assert result is False
+    mock_print_error.assert_called_once()
+    message = mock_print_error.call_args.args[0]
+    assert "5 minutos" in message
+    assert "Timeout" not in message and "timeout" not in message.lower()
