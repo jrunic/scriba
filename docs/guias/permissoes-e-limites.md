@@ -44,10 +44,11 @@ Medido diretamente no código-fonte do `scriba` — não é uma lista teórica:
 
 **`offline_access`** — não está na lista de escopos que o código declara.
 É um escopo reservado que o MSAL concede implicitamente para aplicações
-públicas no fluxo de device code. É o que permite a sessão persistir sem
-pedir login a cada uso — ver [reautenticação](reautenticacao.md). Na prática
-funciona como uma permissão concedida, mesmo sem aparecer na lista que o
-código pede explicitamente.
+públicas em fluxos delegados (como o authorization code + PKCE que o
+`scriba` usa). É o que permite a sessão persistir sem pedir login a cada
+uso — ver [reautenticação](reautenticacao.md). Na prática funciona como uma
+permissão concedida, mesmo sem aparecer na lista que o código pede
+explicitamente.
 
 **`User.Read`** — não aparece em nenhuma chamada do código. Pode ou não
 aparecer na tela de consentimento dependendo de como o app foi registrado no
