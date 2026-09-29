@@ -296,27 +296,19 @@ AppLocker e macOS) pendente antes de aceitar o ciclo — ver `## Pendências`.
       `skipif(sys.platform == "win32")`. Detalhe:
       `11-tarefas/20260929-validacao-de-campo-fase2-endurecimento.md`
       (fora deste repositório).
-- [ ] **macOS: primeiro acesso ao item do Keychain por binário/caminho
-      distinto pede senha do sistema; depois de aprovar ("sempre
-      permitir"), fica silencioso — não confirmado com o binário de
-      produção real.** Relato direto do Orlando (vendo a tela) na
-      validação de campo de 29/09/2026: pediu senha "nos primeiros"
-      comandos, depois parou de pedir. Consistente com a leitura do
-      código: `msal_extensions.osx.Keychain` cria o item via
-      `SecKeychainAddGenericPassword` sem lista de aplicativos confiáveis
-      (`trustedApplications=None`), então o macOS pede aprovação (com
-      opção "sempre permitir") na primeira vez que **cada identidade de
-      processo distinta** tenta ler — e a sessão de validação usou várias
-      formas de invocar (`uv run scriba ...`, `uv run python3 -c ...`),
-      cada uma provavelmente contando como identidade própria. **Não
-      medido ainda:** se o binário de produção único (`scriba` instalado
-      via `pip install`, um só caminho) pede só uma vez por
-      instalação/usuário, ou se pede de novo a cada nova versão instalada
-      (caminho do binário muda?). Se for só uma vez por instalação, é UX
-      aceitável (mesmo padrão de outros CLIs que usam Keychain) e só
-      precisa de uma frase no guia de instalação avisando "primeiro
-      comando pode pedir a senha do sistema — escolher "sempre permitir"";
-      se pedir de novo a cada atualização, é fricção real a resolver.
+- [ ] **macOS: confirmar com o binário de produção único (não a mistura de
+      `uv run scriba`/`uv run python3 -c` usada na validação de campo) se
+      o pedido de senha do Keychain acontece só uma vez por
+      instalação/usuário, ou de novo a cada atualização (caminho do
+      binário muda?).** Relato do Orlando (validação de campo,
+      29/09/2026): pediu senha "nos primeiros" comandos, depois parou —
+      consistente com "primeira vez por identidade de processo distinta,
+      depois fica permitido" (`msal_extensions.osx.Keychain` cria o item
+      sem lista de aplicativos confiáveis). Guia de instalação já avisa
+      sobre o prompt e recomenda "Sempre Permitir"
+      (`docs/guias/instalar.md`, passo 2). Falta só confirmar se instalar
+      uma versão nova do `scriba` reabre o prompt (fricção real, a
+      resolver) ou não (UX aceitável, já coberta pelo aviso no guia).
 
 ## Referências
 

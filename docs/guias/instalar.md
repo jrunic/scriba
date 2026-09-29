@@ -108,6 +108,14 @@ de credenciais do sistema operacional (DPAPI no Windows, Keychain no
 macOS) — não em texto puro no arquivo. Em Linux, essa proteção ainda não
 existe; o arquivo mantém só a permissão restrita (0600) da fase anterior.
 
+**Em macOS, o primeiro comando que ler o token pode abrir um pedido de
+senha do sistema** ("scriba quer acessar um item confidencial..." ou
+semelhante) — é o macOS pedindo aprovação pra esse acesso ao Keychain, não
+um erro do `scriba`. Escolher **"Sempre Permitir"**, não "Permitir uma
+vez" — assim o pedido não se repete nos comandos seguintes. Medido em
+validação de campo (29/09/2026): aparece nas primeiras execuções, some
+depois de aprovado.
+
 **3. Localizar o executável (importante em Windows)**
 
 Em Windows, `pip install --user` frequentemente não coloca o script no PATH.
