@@ -54,6 +54,11 @@ def logout() -> None:
     if token_path.exists():
         token_path.unlink()
         print_success("Logout feito — token removido.")
+        console.print(
+            "[yellow]Aviso:[/] isso remove só o token local. A sessão no Microsoft "
+            "Entra continua válida até expirar ou ser revogada — ver "
+            "'Como revogar o acesso' em docs/guias/cadastrar-app-entra.md."
+        )
     else:
         console.print("Nenhum token encontrado; já deslogado.")
 

@@ -170,3 +170,16 @@ def test_logout_without_token_reports_already_logged_out(mock_console, tmp_path,
 
     assert result.exit_code == 0
     mock_console.print.assert_called_once()
+
+
+def test_logout_warns_that_entra_session_is_not_revoked(tmp_path, monkeypatch):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    token_file = tmp_path / "token"
+    token_file.write_text("fake-token")
+
+    result = runner.invoke(app, ["auth", "logout"])
+
+    assert result.exit_code == 0
+    output_lower = result.output.lower()
+    assert "revog" in output_lower
+    assert "entra" in output_lower
