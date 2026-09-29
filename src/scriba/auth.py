@@ -19,6 +19,12 @@ from O365 import Account, FileSystemTokenBackend
 
 from scriba.config import get_state_dir, load_config
 from scriba.display import console, print_error
+from scriba.token_crypto import (
+    CofreIndisponivelError,
+    TokenFormatoAntigoError,
+    criar_adaptador_criptografia,
+    nome_servico_keychain,
+)
 
 SCOPES = ["Mail.ReadWrite", "calendar_all"]
 TOKEN_FILENAME = "token"
@@ -66,10 +72,14 @@ class _TokenBackendComPermissaoRestrita(FileSystemTokenBackend):
 
 
 def _token_backend() -> FileSystemTokenBackend:
-    return _TokenBackendComPermissaoRestrita(
+    backend = _TokenBackendComPermissaoRestrita(
         token_path=get_state_dir(),
         token_filename=TOKEN_FILENAME,
     )
+    adaptador = criar_adaptador_criptografia(servico=nome_servico_keychain(get_state_dir()))
+    if adaptador is not None:
+        backend.cryptography_manager = adaptador
+    return backend
 
 
 def _build_account(client_id: str, tenant_id: str) -> Account:

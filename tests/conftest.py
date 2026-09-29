@@ -61,3 +61,15 @@ def mock_event():
     ev.attendees = []
     ev.organizer = None
     return ev
+
+
+@pytest.fixture(autouse=True)
+def _sem_adaptador_de_criptografia_por_padrao(monkeypatch):
+    """Todo teste, por padrão, vê cryptography_manager=None (o
+    comportamento da Fase 1) — nenhum teste toca o Keychain/DPAPI real
+    sem pedir explicitamente. Um teste que precisa do adaptador de
+    verdade (mockado na fronteira do SO) sobrescreve com
+    monkeypatch.setattr("scriba.auth.criar_adaptador_criptografia", ...)
+    dentro do próprio corpo — o monkeypatch é compartilhado por task e
+    função de teste, então a sobrescrita local vence até o teardown."""
+    monkeypatch.setattr("scriba.auth.criar_adaptador_criptografia", lambda servico: None)

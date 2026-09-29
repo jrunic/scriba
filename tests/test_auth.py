@@ -205,3 +205,44 @@ def test_get_account_exits_with_error_when_tenant_is_common(monkeypatch, tmp_pat
         raise AssertionError("esperava typer.Exit")
     except typer.Exit as exc:
         assert exc.exit_code == 1
+
+
+def test_token_backend_gets_cryptography_manager_assigned_on_supported_platform(
+    monkeypatch, tmp_path
+):
+    """Sobrescreve a fixture autouse da Task 4 (que neutraliza o
+    adaptador por padrão) para provar que, quando o de verdade roda, a
+    atribuição acontece — sem redesenhar a subclasse da Fase 1."""
+    from unittest.mock import patch
+
+    from scriba.token_crypto import criar_adaptador_criptografia
+
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "darwin")
+    monkeypatch.setattr("scriba.auth.criar_adaptador_criptografia", criar_adaptador_criptografia)
+
+    with patch("scriba.token_crypto._criar_keychain"):
+        from scriba.auth import _token_backend
+
+        backend = _token_backend()
+
+    from scriba.token_crypto import AdaptadorMacOSKeychain
+
+    assert isinstance(backend.cryptography_manager, AdaptadorMacOSKeychain)
+
+
+def test_token_backend_keeps_cryptography_manager_none_by_default_in_other_tests(
+    monkeypatch, tmp_path
+):
+    """Confirma que a fixture autouse da Task 4 protege por padrão —
+    sem sobrescrever nada, cryptography_manager continua None mesmo
+    numa plataforma suportada (comportamento idêntico à Fase 1 para
+    todo teste que não pede o adaptador real)."""
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "darwin")
+
+    from scriba.auth import _token_backend
+
+    backend = _token_backend()
+
+    assert backend.cryptography_manager is None
