@@ -16,7 +16,8 @@ def test_draft_creates_message_and_saves_without_sending(mock_get_account, mock_
 
     result = runner.invoke(
         app,
-        ["mail", "draft", "--to", "bob@example.com", "--subject", "Oi", "--body", "Tudo bem?"],
+        ["mail", "draft", "--to", "bob@example.com", "--subject", "Oi"],
+        input="Tudo bem?",
     )
 
     assert result.exit_code == 0
@@ -36,7 +37,8 @@ def test_draft_reports_failure_when_save_draft_returns_false(mock_get_account, m
 
     result = runner.invoke(
         app,
-        ["mail", "draft", "--to", "bob@example.com", "--subject", "Oi", "--body", "Tudo bem?"],
+        ["mail", "draft", "--to", "bob@example.com", "--subject", "Oi"],
+        input="Tudo bem?",
     )
 
     assert result.exit_code == 1
@@ -167,7 +169,7 @@ def test_reply_creates_draft_addressed_to_sender_only_by_default(
     mock_account.mailbox.return_value = mailbox
     mock_get_account.return_value = mock_account
 
-    result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body", "Recebido, obrigado."])
+    result = runner.invoke(app, ["mail", "reply", "msg-id-123"], input="Recebido, obrigado.")
 
     assert result.exit_code == 0
     mock_message.reply.assert_called_once_with(to_all=False)
@@ -190,7 +192,8 @@ def test_reply_with_reply_all_addresses_every_original_recipient(
 
     result = runner.invoke(
         app,
-        ["mail", "reply", "msg-id-123", "--body", "Recebido, obrigado a todos.", "--reply-all"],
+        ["mail", "reply", "msg-id-123", "--reply-all"],
+        input="Recebido, obrigado a todos.",
     )
 
     assert result.exit_code == 0
@@ -209,7 +212,7 @@ def test_reply_reports_failure_when_save_draft_returns_false(
     mock_account.mailbox.return_value = mailbox
     mock_get_account.return_value = mock_account
 
-    result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body", "Oi"])
+    result = runner.invoke(app, ["mail", "reply", "msg-id-123"], input="Oi")
 
     assert result.exit_code == 1
 
@@ -221,7 +224,7 @@ def test_reply_with_unknown_id_fails(mock_get_account, mock_account):
     mock_account.mailbox.return_value = mailbox
     mock_get_account.return_value = mock_account
 
-    result = runner.invoke(app, ["mail", "reply", "id-inexistente", "--body", "Oi"])
+    result = runner.invoke(app, ["mail", "reply", "id-inexistente"], input="Oi")
 
     assert result.exit_code == 1
     assert "Erro" in result.output
@@ -237,7 +240,7 @@ def test_reply_to_a_draft_message_fails_with_readable_error(
     mock_account.mailbox.return_value = mailbox
     mock_get_account.return_value = mock_account
 
-    result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body", "Oi"])
+    result = runner.invoke(app, ["mail", "reply", "msg-id-123"], input="Oi")
 
     assert result.exit_code == 1
     assert "Erro" in result.output
@@ -253,7 +256,7 @@ def test_reply_reports_failure_when_reply_call_returns_none(
     mock_account.mailbox.return_value = mailbox
     mock_get_account.return_value = mock_account
 
-    result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body", "Oi"])
+    result = runner.invoke(app, ["mail", "reply", "msg-id-123"], input="Oi")
 
     assert result.exit_code == 1
     assert "Erro" in result.output
@@ -426,3 +429,149 @@ def test_build_search_query_combines_three_filters_including_date(monkeypatch, t
     assert rendered.startswith(
         "isRead eq false and hasAttachments eq true and receivedDateTime ge "
     )
+
+
+def test_read_body_from_file(tmp_path):
+    from scriba.commands.mail_cmd import _read_body
+
+    body_file = tmp_path / "corpo.txt"
+    body_file.write_text("Corpo lido do arquivo.")
+
+    assert _read_body(body_file) == "Corpo lido do arquivo."
+
+
+def test_read_body_from_stdin_when_no_file(monkeypatch):
+    import io
+
+    from scriba.commands.mail_cmd import _read_body
+
+    monkeypatch.setattr("sys.stdin", io.StringIO("Corpo via stdin."))
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False, raising=False)
+
+    assert _read_body(None) == "Corpo via stdin."
+
+
+def test_read_body_empty_stdin_is_empty_string_not_error(monkeypatch):
+    import io
+
+    from scriba.commands.mail_cmd import _read_body
+
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False, raising=False)
+
+    assert _read_body(None) == ""
+
+
+def test_read_body_fails_clearly_when_stdin_is_a_terminal_and_no_file(monkeypatch):
+    import typer
+
+    from scriba.commands.mail_cmd import _read_body
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True, raising=False)
+
+    try:
+        _read_body(None)
+        raise AssertionError("esperava typer.Exit")
+    except typer.Exit as exc:
+        assert exc.exit_code == 1
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+def test_draft_reads_body_from_file_option(mock_get_account, mock_account, tmp_path):
+    new_message = MagicMock()
+    new_message.save_draft.return_value = True
+    mock_account.new_message.return_value = new_message
+    mock_get_account.return_value = mock_account
+
+    body_file = tmp_path / "corpo.txt"
+    body_file.write_text("Tudo bem?")
+
+    result = runner.invoke(
+        app,
+        [
+            "mail",
+            "draft",
+            "--to",
+            "bob@example.com",
+            "--subject",
+            "Oi",
+            "--body-file",
+            str(body_file),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert new_message.body == "Tudo bem?"
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+def test_draft_reads_body_from_stdin_when_no_body_file(mock_get_account, mock_account):
+    new_message = MagicMock()
+    new_message.save_draft.return_value = True
+    mock_account.new_message.return_value = new_message
+    mock_get_account.return_value = mock_account
+
+    result = runner.invoke(
+        app,
+        ["mail", "draft", "--to", "bob@example.com", "--subject", "Oi"],
+        input="Corpo via stdin.\n",
+    )
+
+    assert result.exit_code == 0
+    assert new_message.body == "Corpo via stdin.\n"
+
+
+def test_draft_no_longer_accepts_body_option(monkeypatch, tmp_path):
+    """Achado dev-10: sem isolar SCRIBA_HOME nem mockar get_account, na
+    fase RED (--body ainda aceito) este teste roda o comando inteiro
+    contra config/token REAIS de quem executa a suíte — se a máquina
+    estiver autenticada, cria um rascunho de verdade no Outlook. O
+    isolamento abaixo neutraliza isso independente da fase (RED ou
+    GREEN): sem client_id configurado, get_account() sai antes de
+    tocar rede, e a asserção (exit_code != 0) passa pelo motivo certo
+    em ambas as fases — click rejeitando --body desconhecido no GREEN,
+    "não configurado" no RED."""
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    result = runner.invoke(
+        app,
+        [
+            "mail",
+            "draft",
+            "--to",
+            "bob@example.com",
+            "--subject",
+            "Oi",
+            "--body",
+            "não deveria existir",
+        ],
+    )
+
+    assert result.exit_code != 0
+
+
+@patch("scriba.commands.mail_cmd.get_account")
+def test_reply_reads_body_from_file_option(mock_get_account, mock_account, mock_message, tmp_path):
+    draft = MagicMock()
+    draft.save_draft.return_value = True
+    mock_message.reply.return_value = draft
+    mailbox = MagicMock()
+    mailbox.get_message.return_value = mock_message
+    mock_account.mailbox.return_value = mailbox
+    mock_get_account.return_value = mock_account
+
+    body_file = tmp_path / "corpo.txt"
+    body_file.write_text("Recebido, obrigado.")
+
+    result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body-file", str(body_file)])
+
+    assert result.exit_code == 0
+    assert draft.body == "Recebido, obrigado."
+
+
+def test_reply_no_longer_accepts_body_option(monkeypatch, tmp_path):
+    """Mesmo isolamento e mesmo motivo do teste equivalente de draft
+    acima (achado dev-10)."""
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    result = runner.invoke(app, ["mail", "reply", "msg-id-123", "--body", "não deveria existir"])
+
+    assert result.exit_code != 0

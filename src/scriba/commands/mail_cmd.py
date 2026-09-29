@@ -1,6 +1,8 @@
 """Comandos de e-mail: draft, search, read."""
 
+import sys
 from datetime import timedelta
+from pathlib import Path
 
 import typer
 
@@ -11,14 +13,41 @@ from scriba.display import console, print_error, print_mail_detail, print_mail_t
 app = typer.Typer(help="Comandos de e-mail")
 
 
+def _read_body(body_file: Path | None) -> str:
+    """Lê o corpo de mensagem de um arquivo ou da entrada padrão — nunca
+    mais de argumento de linha de comando (achado F8 da auditoria de
+    segurança externa, 29/09/2026: corpo em argumento fica visível em
+    `ps`, histórico de shell e log de quem opera via agente de IA).
+    Precedência: arquivo, quando informado, sempre vence. Sem arquivo,
+    lê a entrada padrão — e falha com mensagem clara se ela for um
+    terminal interativo (ninguém digitaria um corpo de e-mail ali).
+    Leitura sempre em UTF-8 explícito — achado dev-10: sem isso, no
+    console legado do Windows (cp1252, a mesma plataforma que já pagou
+    o pedágio do U+200B em strip_html) um corpo salvo em UTF-8 com
+    acento quebra com UnicodeDecodeError no meio do comando."""
+    if body_file is not None:
+        return body_file.read_text(encoding="utf-8")
+    if sys.stdin.isatty():
+        print_error(
+            "Informe o corpo da mensagem por --body-file <arquivo> ou "
+            'redirecionando a entrada padrão (ex.: echo "texto" | scriba mail draft ...).'
+        )
+        raise typer.Exit(1)
+    return sys.stdin.read()
+
+
 @app.command()
 def draft(
     to: str = typer.Option(..., "--to"),
     subject: str = typer.Option(..., "--subject"),
-    body: str = typer.Option(..., "--body"),
+    body_file: Path | None = typer.Option(  # noqa: B008 — padrão Typer; ruff só isenta sem anotação Path
+        None, "--body-file", exists=True, readable=True, dir_okay=False
+    ),
     cc: str | None = typer.Option(None, "--cc"),
 ) -> None:
-    """Cria um rascunho — nunca envia."""
+    """Cria um rascunho — nunca envia. Corpo por --body-file ou stdin."""
+    body = _read_body(body_file)
+
     account = get_account()
     new_message = account.new_message()
 
@@ -38,10 +67,15 @@ def draft(
 @app.command()
 def reply(
     message_id: str = typer.Argument(...),
-    body: str = typer.Option(..., "--body"),
+    body_file: Path | None = typer.Option(  # noqa: B008 — padrão Typer; ruff só isenta sem anotação Path
+        None, "--body-file", exists=True, readable=True, dir_okay=False
+    ),
     reply_all: bool = typer.Option(False, "--reply-all"),
 ) -> None:
-    """Cria um rascunho de resposta a uma mensagem existente — nunca envia."""
+    """Cria um rascunho de resposta a uma mensagem existente — nunca
+    envia. Corpo por --body-file ou stdin."""
+    body = _read_body(body_file)
+
     account = get_account()
     mailbox = account.mailbox()
 
