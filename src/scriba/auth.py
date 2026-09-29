@@ -23,6 +23,7 @@ from scriba.display import console, print_error
 SCOPES = ["Mail.ReadWrite", "calendar_all"]
 TOKEN_FILENAME = "token"
 CALLBACK_TIMEOUT_SECONDS = 300
+TENANT_PROIBIDO = "common"
 
 
 class _CallbackHandler(BaseHTTPRequestHandler):
@@ -71,7 +72,7 @@ def _token_backend() -> FileSystemTokenBackend:
     )
 
 
-def _build_account(client_id: str, tenant_id: str = "common") -> Account:
+def _build_account(client_id: str, tenant_id: str) -> Account:
     return Account(
         (client_id,),
         auth_flow_type="public",
@@ -80,7 +81,7 @@ def _build_account(client_id: str, tenant_id: str = "common") -> Account:
     )
 
 
-def _get_graph_scopes(client_id: str, tenant_id: str = "common") -> list[str]:
+def _get_graph_scopes(client_id: str, tenant_id: str) -> list[str]:
     account = _build_account(client_id, tenant_id)
     return account.protocol.get_scopes_for(SCOPES)
 
@@ -92,7 +93,7 @@ def _capture_callback_url(server: HTTPServer) -> str | None:
     return server.callback_url
 
 
-def authenticate(client_id: str, tenant_id: str = "common") -> bool:
+def authenticate(client_id: str, tenant_id: str) -> bool:
     """Autoriza via authorization code flow + PKCE, loopback local.
 
     Retorna True se autenticou.
@@ -133,10 +134,11 @@ def authenticate(client_id: str, tenant_id: str = "common") -> bool:
 def is_authenticated() -> bool:
     config = load_config()
     client_id = config.get("client_id")
-    if not client_id:
+    tenant_id = config.get("tenant_id")
+    if not client_id or not tenant_id or tenant_id == TENANT_PROIBIDO:
         return False
     try:
-        account = _build_account(client_id, config.get("tenant_id", "common"))
+        account = _build_account(client_id, tenant_id)
         return account.is_authenticated
     except Exception:  # noqa: BLE001 — checagem de status nunca deve estourar pro chamador
         return False
@@ -146,12 +148,15 @@ def get_account() -> Account:
     """Retorna Account autenticada ou sai com erro (exit 1)."""
     config = load_config()
     client_id = config.get("client_id")
+    tenant_id = config.get("tenant_id")
 
-    if not client_id:
-        print_error("Não configurado. Rode: scriba auth login --client-id <ID>")
+    if not client_id or not tenant_id or tenant_id == TENANT_PROIBIDO:
+        print_error(
+            "Não configurado. Rode: scriba auth login --client-id <ID> --tenant-id <TENANT>"
+        )
         raise typer.Exit(1)
 
-    account = _build_account(client_id, config.get("tenant_id", "common"))
+    account = _build_account(client_id, tenant_id)
 
     if not account.is_authenticated:
         print_error("Não autenticado. Rode: scriba auth login")

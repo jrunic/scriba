@@ -45,7 +45,7 @@ Nenhuma resposta ao checklist substitui a confirmação real. "Pronto" significa
 rodar, na máquina de destino:
 
 ```
-scriba auth login --client-id <client-id>
+scriba auth login --client-id <client-id> --tenant-id <tenant-id>
 scriba auth status
 ```
 

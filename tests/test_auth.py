@@ -166,3 +166,42 @@ def test_cryptography_manager_attribute_is_still_inherited_and_settable(monkeypa
     sentinel = object()
     backend.cryptography_manager = sentinel
     assert backend.cryptography_manager is sentinel
+
+
+def test_is_authenticated_returns_false_when_tenant_is_common(monkeypatch, tmp_path):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.config import save_config
+
+    save_config({"client_id": "abc123", "tenant_id": "common"})
+
+    from scriba.auth import is_authenticated
+
+    assert is_authenticated() is False
+
+
+def test_is_authenticated_returns_false_when_tenant_is_missing(monkeypatch, tmp_path):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.config import save_config
+
+    save_config({"client_id": "abc123"})
+
+    from scriba.auth import is_authenticated
+
+    assert is_authenticated() is False
+
+
+def test_get_account_exits_with_error_when_tenant_is_common(monkeypatch, tmp_path):
+    import typer
+
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.config import save_config
+
+    save_config({"client_id": "abc123", "tenant_id": "common"})
+
+    from scriba.auth import get_account
+
+    try:
+        get_account()
+        raise AssertionError("esperava typer.Exit")
+    except typer.Exit as exc:
+        assert exc.exit_code == 1

@@ -2,7 +2,7 @@
 
 import typer
 
-from scriba.auth import TOKEN_FILENAME, authenticate, is_authenticated
+from scriba.auth import TENANT_PROIBIDO, TOKEN_FILENAME, authenticate, is_authenticated
 from scriba.config import get_state_dir, load_config, save_config
 from scriba.display import console, print_error, print_success
 
@@ -12,15 +12,13 @@ app = typer.Typer(help="Gerencia autenticação.")
 @app.command()
 def login(
     client_id: str | None = typer.Option(None, "--client-id", envvar="SCRIBA_CLIENT_ID"),
-    tenant_id: str = typer.Option("common", "--tenant-id", envvar="SCRIBA_TENANT_ID"),
+    tenant_id: str | None = typer.Option(None, "--tenant-id", envvar="SCRIBA_TENANT_ID"),
 ) -> None:
     """Autentica via authorization code flow com PKCE (login pelo navegador)."""
     config = load_config()
 
     if client_id:
         config["client_id"] = client_id
-        config["tenant_id"] = tenant_id
-        save_config(config)
     else:
         client_id = config.get("client_id")
 
@@ -28,7 +26,19 @@ def login(
         print_error("Nenhum client ID encontrado. Rode: scriba auth login --client-id <ID>")
         raise typer.Exit(1)
 
-    tenant_id = config.get("tenant_id", tenant_id)
+    if tenant_id is None:
+        tenant_id = config.get("tenant_id")
+
+    if not tenant_id or tenant_id == TENANT_PROIBIDO:
+        print_error(
+            "Tenant obrigatório. Rode: scriba auth login --tenant-id <id-do-tenant> "
+            "('common' não é aceito — use o Directory (tenant) ID da sua organização, "
+            "ver docs/guias/cadastrar-app-entra.md)."
+        )
+        raise typer.Exit(1)
+
+    config["tenant_id"] = tenant_id
+    save_config(config)
 
     if authenticate(client_id, tenant_id):
         print_success("Autenticado com sucesso.")
@@ -40,9 +50,6 @@ def login(
 @app.command()
 def logout() -> None:
     """Remove o token local."""
-    # FileSystemTokenBackend grava exatamente TOKEN_FILENAME, sem sufixo
-    # ".token" — achado de campo (VM Windows, 27/09/2026); confirmado por
-    # listagem real do state dir, não pela suposição anterior.
     token_path = get_state_dir() / TOKEN_FILENAME
     if token_path.exists():
         token_path.unlink()

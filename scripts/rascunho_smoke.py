@@ -32,7 +32,13 @@ def main() -> None:
 
     to_address = sys.argv[1]
     client_id = os.environ.get("SCRIBA_CLIENT_ID")
-    tenant_id = os.environ.get("SCRIBA_TENANT_ID", "common")
+    tenant_id = os.environ.get("SCRIBA_TENANT_ID")
+    if not tenant_id or tenant_id == "common":
+        print(
+            "SCRIBA_TENANT_ID obrigatório (tenant real, não 'common') para rodar este smoke.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     if not client_id:
         print("Defina SCRIBA_CLIENT_ID antes de rodar.", file=sys.stderr)

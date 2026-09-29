@@ -10,35 +10,117 @@ runner = CliRunner()
 @patch("scriba.commands.auth_cmd.authenticate", return_value=True)
 @patch("scriba.commands.auth_cmd.save_config")
 @patch("scriba.commands.auth_cmd.load_config", return_value={})
-def test_login_with_client_id_saves_config_and_authenticates(mock_load, mock_save, mock_auth):
-    result = runner.invoke(app, ["auth", "login", "--client-id", "abc123"])
+def test_login_with_client_id_and_tenant_saves_config_and_authenticates(
+    mock_load, mock_save, mock_auth
+):
+    result = runner.invoke(
+        app, ["auth", "login", "--client-id", "abc123", "--tenant-id", "tenant-real-do-cliente"]
+    )
 
     assert result.exit_code == 0
-    mock_save.assert_called_once_with({"client_id": "abc123", "tenant_id": "common"})
-    mock_auth.assert_called_once_with("abc123", "common")
-
-
-@patch("scriba.commands.auth_cmd.load_config", return_value={})
-def test_login_without_client_id_and_no_config_fails(mock_load):
-    result = runner.invoke(app, ["auth", "login"])
-
-    assert result.exit_code == 1
+    mock_save.assert_called_once_with(
+        {"client_id": "abc123", "tenant_id": "tenant-real-do-cliente"}
+    )
+    mock_auth.assert_called_once_with("abc123", "tenant-real-do-cliente")
 
 
 @patch("scriba.commands.auth_cmd.authenticate", return_value=True)
 @patch("scriba.commands.auth_cmd.save_config")
 @patch("scriba.commands.auth_cmd.load_config", return_value={})
-def test_login_with_env_var_saves_config_and_authenticates(
+def test_login_without_client_id_and_no_config_fails(mock_load, mock_save, mock_auth, monkeypatch):
+    monkeypatch.delenv("SCRIBA_CLIENT_ID", raising=False)
+    monkeypatch.delenv("SCRIBA_TENANT_ID", raising=False)
+    result = runner.invoke(app, ["auth", "login", "--tenant-id", "tenant-real"])
+
+    assert result.exit_code == 1
+    mock_auth.assert_not_called()
+
+
+@patch("scriba.commands.auth_cmd.authenticate", return_value=True)
+@patch("scriba.commands.auth_cmd.save_config")
+@patch("scriba.commands.auth_cmd.load_config", return_value={})
+def test_login_without_tenant_and_no_config_fails(mock_load, mock_save, mock_auth, monkeypatch):
+    monkeypatch.delenv("SCRIBA_TENANT_ID", raising=False)
+    result = runner.invoke(app, ["auth", "login", "--client-id", "abc123"])
+
+    assert result.exit_code == 1
+    mock_auth.assert_not_called()
+
+
+@patch("scriba.commands.auth_cmd.authenticate", return_value=True)
+@patch("scriba.commands.auth_cmd.save_config")
+@patch("scriba.commands.auth_cmd.load_config", return_value={})
+def test_login_rejects_common_as_explicit_tenant(mock_load, mock_save, mock_auth, monkeypatch):
+    monkeypatch.delenv("SCRIBA_TENANT_ID", raising=False)
+    result = runner.invoke(app, ["auth", "login", "--client-id", "abc123", "--tenant-id", "common"])
+
+    assert result.exit_code == 1
+    mock_auth.assert_not_called()
+
+
+@patch("scriba.commands.auth_cmd.authenticate", return_value=True)
+@patch("scriba.commands.auth_cmd.save_config")
+@patch(
+    "scriba.commands.auth_cmd.load_config",
+    return_value={"client_id": "abc", "tenant_id": "common"},
+)
+def test_login_rejects_common_already_saved_in_config_without_new_option(
+    mock_load, mock_save, mock_auth, monkeypatch
+):
+    monkeypatch.delenv("SCRIBA_TENANT_ID", raising=False)
+    result = runner.invoke(app, ["auth", "login"])
+
+    assert result.exit_code == 1
+    mock_auth.assert_not_called()
+
+
+@patch("scriba.commands.auth_cmd.authenticate", return_value=True)
+@patch("scriba.commands.auth_cmd.save_config")
+@patch("scriba.commands.auth_cmd.load_config", return_value={})
+def test_login_with_env_var_tenant_saves_config_and_authenticates(
     mock_load, mock_save, mock_auth, monkeypatch
 ):
     monkeypatch.setenv("SCRIBA_CLIENT_ID", "envclient")
-    monkeypatch.delenv("SCRIBA_TENANT_ID", raising=False)
+    monkeypatch.setenv("SCRIBA_TENANT_ID", "tenant-do-env")
 
     result = runner.invoke(app, ["auth", "login"])
 
     assert result.exit_code == 0
-    mock_save.assert_called_once_with({"client_id": "envclient", "tenant_id": "common"})
-    mock_auth.assert_called_once_with("envclient", "common")
+    mock_save.assert_called_once_with({"client_id": "envclient", "tenant_id": "tenant-do-env"})
+    mock_auth.assert_called_once_with("envclient", "tenant-do-env")
+
+
+@patch("scriba.commands.auth_cmd.authenticate", return_value=True)
+@patch("scriba.commands.auth_cmd.save_config")
+@patch(
+    "scriba.commands.auth_cmd.load_config",
+    return_value={"client_id": "abc", "tenant_id": "tenant-antigo-salvo"},
+)
+def test_login_explicit_tenant_option_wins_over_saved_config(mock_load, mock_save, mock_auth):
+    """Precedência corrigida na revisão dev-10: o código atual faz
+    `tenant_id = config.get("tenant_id", tenant_id)` — o valor SALVO
+    sobrescreve silenciosamente a opção explícita. A correção inverte
+    isso: a opção explícita vence."""
+    result = runner.invoke(app, ["auth", "login", "--tenant-id", "tenant-novo-explicito"])
+
+    assert result.exit_code == 0
+    mock_auth.assert_called_once_with("abc", "tenant-novo-explicito")
+
+
+@patch("scriba.commands.auth_cmd.authenticate", return_value=True)
+@patch("scriba.commands.auth_cmd.save_config")
+@patch(
+    "scriba.commands.auth_cmd.load_config",
+    return_value={"client_id": "abc", "tenant_id": "tenant-valido-salvo"},
+)
+def test_login_uses_saved_valid_tenant_when_no_option_given(mock_load, mock_save, mock_auth):
+    """Quarto caso do critério 4 da spec (achado dev-10: faltava no
+    plano) — configuração salva com tenant VÁLIDO, sem opção nova,
+    autentica normalmente com o valor salvo."""
+    result = runner.invoke(app, ["auth", "login"])
+
+    assert result.exit_code == 0
+    mock_auth.assert_called_once_with("abc", "tenant-valido-salvo")
 
 
 @patch("scriba.commands.auth_cmd.console")
