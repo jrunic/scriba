@@ -150,7 +150,7 @@ def is_authenticated() -> bool:
     try:
         account = _build_account(client_id, tenant_id)
         return account.is_authenticated
-    except Exception:  # noqa: BLE001 — checagem de status nunca deve estourar pro chamador
+    except TokenFormatoAntigoError:
         return False
 
 
@@ -166,9 +166,17 @@ def get_account() -> Account:
         )
         raise typer.Exit(1)
 
-    account = _build_account(client_id, tenant_id)
+    try:
+        account = _build_account(client_id, tenant_id)
+        autenticado = account.is_authenticated
+    except TokenFormatoAntigoError:
+        print_error("Não autenticado. Rode: scriba auth login")
+        raise typer.Exit(1) from None
+    except CofreIndisponivelError as exc:
+        print_error(f"Cofre de credenciais do sistema indisponível: {exc}")
+        raise typer.Exit(1) from None
 
-    if not account.is_authenticated:
+    if not autenticado:
         print_error("Não autenticado. Rode: scriba auth login")
         raise typer.Exit(1)
 

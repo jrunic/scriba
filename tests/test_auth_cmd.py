@@ -183,3 +183,20 @@ def test_logout_warns_that_entra_session_is_not_revoked(tmp_path, monkeypatch):
     output_lower = result.output.lower()
     assert "revog" in output_lower
     assert "entra" in output_lower
+
+
+def test_status_reports_distinct_message_when_vault_is_unavailable(monkeypatch):
+    """Achado dev-10: sem tratamento em status(), CofreIndisponivelError
+    propagada por is_authenticated() vira traceback cru — o critério 4
+    exige mensagem própria 'em qualquer um dos pontos de entrada'."""
+    from scriba.token_crypto import CofreIndisponivelError
+
+    with patch(
+        "scriba.commands.auth_cmd.is_authenticated",
+        side_effect=CofreIndisponivelError("cofre bloqueado"),
+    ):
+        result = runner.invoke(app, ["auth", "status"])
+
+    assert result.exit_code == 1
+    assert "cofre" in result.output.lower()
+    assert "traceback" not in result.output.lower()

@@ -246,3 +246,152 @@ def test_token_backend_keeps_cryptography_manager_none_by_default_in_other_tests
     backend = _token_backend()
 
     assert backend.cryptography_manager is None
+
+
+def test_get_account_reports_not_authenticated_for_old_format_token_on_windows(
+    monkeypatch, tmp_path
+):
+    """Critério 3, ramo Windows: token em formato antigo (texto puro)
+    vira 'não autenticado' via TokenFormatoAntigoError — não
+    traceback. sys.platform fixado para exercitar o adaptador Windows
+    de verdade (mockado só na fronteira do SO)."""
+    import typer
+
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "win32")
+
+    from scriba.token_crypto import criar_adaptador_criptografia
+
+    monkeypatch.setattr("scriba.auth.criar_adaptador_criptografia", criar_adaptador_criptografia)
+
+    from unittest.mock import MagicMock, patch
+
+    with patch("scriba.token_crypto._criar_agente_dpapi", return_value=MagicMock()):
+        from scriba.config import save_config
+
+        save_config({"client_id": "abc", "tenant_id": "tenant-real"})
+        (tmp_path / "token").write_text('{"access_token": "token-em-claro-antigo"}')
+
+        from scriba.auth import get_account
+
+        try:
+            get_account()
+            raise AssertionError("esperava typer.Exit")
+        except typer.Exit as exc:
+            assert exc.exit_code == 1
+
+
+def test_get_account_reports_not_authenticated_for_missing_keychain_item_on_macos(
+    monkeypatch, tmp_path
+):
+    """Critério 3, ramo macOS: item de Keychain ausente (arquivo
+    antigo ou primeiro uso) vira 'não autenticado' pelo caminho normal
+    — sem exceção propagada, via o discriminante ITEM_NOT_FOUND do
+    adaptador macOS."""
+    import typer
+
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "darwin")
+
+    from scriba.token_crypto import criar_adaptador_criptografia
+
+    monkeypatch.setattr("scriba.auth.criar_adaptador_criptografia", criar_adaptador_criptografia)
+
+    from unittest.mock import MagicMock, patch
+
+    from test_token_crypto import _OSErrorComExitStatus
+
+    keychain_mock = MagicMock()
+    keychain_mock.get_generic_password.side_effect = _OSErrorComExitStatus(-25300)
+
+    with patch("scriba.token_crypto._criar_keychain", return_value=keychain_mock):
+        from scriba.config import save_config
+
+        save_config({"client_id": "abc", "tenant_id": "tenant-real"})
+        (tmp_path / "token").write_text("qualquer-conteudo-marcador-ou-antigo")
+
+        from scriba.auth import get_account
+
+        try:
+            get_account()
+            raise AssertionError("esperava typer.Exit")
+        except typer.Exit as exc:
+            assert exc.exit_code == 1
+
+
+def test_get_account_reports_distinct_error_for_real_vault_failure(monkeypatch, tmp_path):
+    """Critério 4. Backend real (passa o isinstance check de
+    Connection.__init__), com um adaptador falso cujo decrypt()
+    levanta CofreIndisponivelError — exercita o caminho real de
+    load_token()/deserialize(), não um mock que nunca é alcançado."""
+    import typer
+
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.auth import TOKEN_FILENAME, _TokenBackendComPermissaoRestrita
+    from scriba.config import get_state_dir, save_config
+    from scriba.token_crypto import CofreIndisponivelError
+
+    save_config({"client_id": "abc", "tenant_id": "tenant-real"})
+    (tmp_path / "token").write_text("qualquer-conteudo")
+
+    class _AdaptadorQuebrado:
+        def encrypt(self, data):
+            return data
+
+        def decrypt(self, data):
+            raise CofreIndisponivelError("cofre bloqueado")
+
+    def _backend_com_adaptador_quebrado():
+        backend = _TokenBackendComPermissaoRestrita(
+            token_path=get_state_dir(), token_filename=TOKEN_FILENAME
+        )
+        backend.cryptography_manager = _AdaptadorQuebrado()
+        return backend
+
+    monkeypatch.setattr("scriba.auth._token_backend", _backend_com_adaptador_quebrado)
+
+    from scriba.auth import get_account
+
+    try:
+        get_account()
+        raise AssertionError("esperava typer.Exit")
+    except typer.Exit as exc:
+        assert exc.exit_code == 1
+
+
+def test_is_authenticated_does_not_swallow_real_vault_failure(monkeypatch, tmp_path):
+    """Achado dev-10: is_authenticated() tinha except Exception amplo
+    que converteria CofreIndisponivelError em False silencioso,
+    contradizendo 'falha de proteção não vira sessão desprotegida
+    silenciosa'. Mesma técnica de backend real do teste acima."""
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.auth import TOKEN_FILENAME, _TokenBackendComPermissaoRestrita
+    from scriba.config import get_state_dir, save_config
+    from scriba.token_crypto import CofreIndisponivelError
+
+    save_config({"client_id": "abc", "tenant_id": "tenant-real"})
+    (tmp_path / "token").write_text("qualquer-conteudo")
+
+    class _AdaptadorQuebrado:
+        def encrypt(self, data):
+            return data
+
+        def decrypt(self, data):
+            raise CofreIndisponivelError("cofre bloqueado")
+
+    def _backend_com_adaptador_quebrado():
+        backend = _TokenBackendComPermissaoRestrita(
+            token_path=get_state_dir(), token_filename=TOKEN_FILENAME
+        )
+        backend.cryptography_manager = _AdaptadorQuebrado()
+        return backend
+
+    monkeypatch.setattr("scriba.auth._token_backend", _backend_com_adaptador_quebrado)
+
+    import pytest
+
+    from scriba.auth import is_authenticated
+    from scriba.token_crypto import CofreIndisponivelError as _CIE
+
+    with pytest.raises(_CIE):
+        is_authenticated()

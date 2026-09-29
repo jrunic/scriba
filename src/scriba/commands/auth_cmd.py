@@ -5,6 +5,7 @@ import typer
 from scriba.auth import TENANT_PROIBIDO, TOKEN_FILENAME, authenticate, is_authenticated
 from scriba.config import get_state_dir, load_config, save_config
 from scriba.display import console, print_error, print_success
+from scriba.token_crypto import CofreIndisponivelError
 
 app = typer.Typer(help="Gerencia autenticação.")
 
@@ -70,7 +71,13 @@ def status() -> None:
     console.print(f"[bold]Client ID:[/] {config.get('client_id', 'não definido')}")
     console.print(f"[bold]Tenant ID:[/] {config.get('tenant_id', 'não definido')}")
 
-    if is_authenticated():
+    try:
+        autenticado = is_authenticated()
+    except CofreIndisponivelError as exc:
+        print_error(f"Cofre de credenciais do sistema indisponível: {exc}")
+        raise typer.Exit(1) from None
+
+    if autenticado:
         print_success("Autenticado.")
     else:
         print_error("Não autenticado.")
