@@ -4,8 +4,21 @@ import html
 import re
 
 from rich.console import Console
+from rich.markup import escape as _escape_rich_markup
 
 console = Console()
+
+_CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def _safe(text) -> str:
+    """Texto remoto (assunto, remetente, corpo, nome) nunca é markup Rich
+    nem carrega caractere de controle — achado F7 da auditoria de
+    segurança externa (29/09/2026): sem isto, `[bold red]...[/]` vindo de
+    um assunto de e-mail é interpretado como formatação real."""
+    text = str(text or "")
+    text = _CONTROL_CHARS_RE.sub("", text)
+    return _escape_rich_markup(text)
 
 
 def print_error(msg: str) -> None:
@@ -54,7 +67,7 @@ def print_mail_table(messages: list) -> None:
         sender = str(getattr(msg, "sender", "") or "")
         subject = getattr(msg, "subject", "") or ""
         object_id = getattr(msg, "object_id", "") or ""
-        table.add_row(sender, subject, object_id)
+        table.add_row(_safe(sender), _safe(subject), object_id)
 
     console.print(table)
 
@@ -68,11 +81,13 @@ def print_mail_detail(msg) -> None:
     if looks_like_html(body):
         body = strip_html(body)
 
-    header = f"[bold]De:[/] {sender}"
+    header = f"[bold]De:[/] {_safe(sender)}"
     console.print(
-        Panel(header, title=getattr(msg, "subject", "") or "(sem assunto)", border_style="blue")
+        Panel(
+            header, title=_safe(getattr(msg, "subject", "") or "(sem assunto)"), border_style="blue"
+        )
     )
-    console.print(body)
+    console.print(_safe(body))
 
 
 def _location_name(location) -> str:
@@ -95,7 +110,10 @@ def print_event_table(events: list) -> None:
         start = ev.start.strftime("%Y-%m-%d %H:%M") if getattr(ev, "start", None) else ""
         location = _location_name(getattr(ev, "location", None))
         table.add_row(
-            getattr(ev, "subject", "") or "", start, location, getattr(ev, "object_id", "") or ""
+            _safe(getattr(ev, "subject", "") or ""),
+            start,
+            _safe(location),
+            getattr(ev, "object_id", "") or "",
         )
 
     console.print(table)
@@ -103,16 +121,20 @@ def print_event_table(events: list) -> None:
 
 def print_event_detail(event) -> None:
     location = _location_name(getattr(event, "location", None))
-    header = f"[bold]Local:[/] {location}"
+    header = f"[bold]Local:[/] {_safe(location)}"
 
     body = getattr(event, "body", "") or "(sem descrição)"
     if looks_like_html(body):
         body = strip_html(body)
 
     console.print(
-        Panel(header, title=getattr(event, "subject", "") or "(sem assunto)", border_style="green")
+        Panel(
+            header,
+            title=_safe(getattr(event, "subject", "") or "(sem assunto)"),
+            border_style="green",
+        )
     )
-    console.print(body)
+    console.print(_safe(body))
 
 
 def print_calendar_table(calendars: list) -> None:
@@ -121,6 +143,6 @@ def print_calendar_table(calendars: list) -> None:
     table.add_column("ID", style="dim", max_width=48)
 
     for cal in calendars:
-        table.add_row(getattr(cal, "name", "") or "", getattr(cal, "calendar_id", "") or "")
+        table.add_row(_safe(getattr(cal, "name", "") or ""), getattr(cal, "calendar_id", "") or "")
 
     console.print(table)

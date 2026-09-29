@@ -111,3 +111,95 @@ def test_location_name_handles_missing_or_empty_location():
     assert _location_name(None) == ""
     assert _location_name({}) == ""
     assert _location_name("Sala 1") == "Sala 1"
+
+
+def test_print_mail_table_escapes_rich_markup_in_subject(captured_console):
+    from unittest.mock import MagicMock
+
+    msg = MagicMock()
+    msg.sender = "remetente@example.com"
+    msg.subject = "[bold red]FAKE[/]"
+    msg.object_id = "id-1"
+    print_mail_table([msg])
+    output = captured_console.getvalue()
+    assert "[bold red]FAKE[/]" in output
+
+
+def test_print_mail_table_strips_esc_byte_from_sender(captured_console):
+    from unittest.mock import MagicMock
+
+    msg = MagicMock()
+    msg.sender = "a\x1bevil@example.com"
+    msg.subject = "assunto normal"
+    msg.object_id = "id-2"
+    print_mail_table([msg])
+    output = captured_console.getvalue()
+    assert "\x1b" not in output
+
+
+def test_print_mail_detail_escapes_rich_markup_in_subject_and_body(captured_console):
+    from unittest.mock import MagicMock
+
+    msg = MagicMock()
+    msg.sender = "remetente@example.com"
+    msg.subject = "[bold red]FAKE[/]"
+    msg.body = "corpo com [italic]markup[/] falso"
+    print_mail_detail(msg)
+    output = captured_console.getvalue()
+    assert "[bold red]FAKE[/]" in output
+    assert "[italic]markup[/]" in output
+
+
+def test_print_mail_detail_strips_esc_byte_from_body(captured_console):
+    """Critério 2 da spec nomeia o CORPO como portador do 0x1b — é o
+    campo que passa por strip_html antes de _safe, o caminho com mais
+    transformação no meio (achado dev-10: o teste da tabela cobre só o
+    remetente)."""
+    from unittest.mock import MagicMock
+
+    msg = MagicMock()
+    msg.sender = "remetente@example.com"
+    msg.subject = "assunto normal"
+    msg.body = "corpo com \x1b sequência de escape embutida"
+    print_mail_detail(msg)
+    output = captured_console.getvalue()
+    assert "\x1b" not in output
+
+
+def test_print_event_table_escapes_rich_markup_in_subject(captured_console):
+    from unittest.mock import MagicMock
+
+    ev = MagicMock()
+    ev.subject = "[bold red]FAKE[/]"
+    ev.start = None
+    ev.location = None
+    ev.object_id = "ev-1"
+    print_event_table([ev])
+    output = captured_console.getvalue()
+    assert "[bold red]FAKE[/]" in output
+
+
+def test_print_event_detail_escapes_rich_markup_in_subject_and_body(captured_console):
+    from unittest.mock import MagicMock
+
+    ev = MagicMock()
+    ev.subject = "[bold red]FAKE[/]"
+    ev.body = "pauta com [italic]markup[/] falso"
+    ev.location = None
+    print_event_detail(ev)
+    output = captured_console.getvalue()
+    assert "[bold red]FAKE[/]" in output
+    assert "[italic]markup[/]" in output
+
+
+def test_print_calendar_table_escapes_rich_markup_in_name(captured_console):
+    from unittest.mock import MagicMock
+
+    from scriba.display import print_calendar_table
+
+    cal = MagicMock()
+    cal.name = "[bold red]FAKE[/]"
+    cal.calendar_id = "cal-1"
+    print_calendar_table([cal])
+    output = captured_console.getvalue()
+    assert "[bold red]FAKE[/]" in output
