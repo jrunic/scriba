@@ -1,6 +1,6 @@
 [project]
 name = "scriba"
-version = "0.2.1"
+version = "0.3.0"
 description = "CLI for Microsoft Graph — read/draft email, read/create calendar events, delegated auth"
 readme = "README.md"
 license = { text = "MIT" }

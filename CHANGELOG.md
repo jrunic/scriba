@@ -13,6 +13,12 @@ tags: [changelog, scriba]
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+## [0.3.0] — 2026-09-29
+
+Endurecimento a partir de uma auditoria de segurança externa. Inclui
+**mudança que quebra compatibilidade** de CLI — corpo de mensagem não é
+mais aceito como argumento, e o tenant passa a ser obrigatório no login.
+
 ### Adicionado
 
 - Conteúdo do token de sessão protegido pelo cofre de credenciais do
@@ -36,10 +42,16 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
   argumento de linha de comando — leitura por `--body-file` ou entrada
   padrão.
 
+- Dependência `O365` ganhou teto de versão (`<3.0`) — antes sem limite
+  superior, uma major futura da lib poderia quebrar o `scriba` em silêncio
+  numa instalação nova.
+
 ### Alterado
 
 - Guia de instalação passa a orientar instalação a partir da release
   publicada (com conferência de checksum), não mais da branch principal.
+  Em macOS, o primeiro comando que ler o token pode pedir aprovação do
+  Keychain — escolher "Sempre Permitir".
 - Guia de cadastro do aplicativo no Entra: seção de revogação de acesso
   reescrita a partir de documentação oficial da Microsoft.
 
