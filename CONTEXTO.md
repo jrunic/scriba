@@ -243,7 +243,8 @@ revogação reescrito a partir de fonte oficial da Microsoft, corpo de
 mensagem fora de argumento de CLI (`--body-file`/stdin), pinagem das
 GitHub Actions por hash de commit. 104 testes verdes. Lacunas conhecidas
 em `## Pendências`. A Fase 2 (F1 da mesma auditoria, cofre do SO para o
-token) é jd-task #1077, ciclo 5 — spec pronta, plano ainda não escrito.
+token) é jd-task #1077, ciclo 5 — implementada (ver incremento abaixo),
+tarefa fechada; ciclo aberto até a validação de campo.
 
 Quinto incremento (`scriba-20260929-endurecimento-pos-auditoria-fase2`,
 jd-task #1077) implementado — F1 da auditoria: conteúdo do token
