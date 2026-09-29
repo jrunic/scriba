@@ -60,16 +60,15 @@ class AdaptadorWindowsDPAPI:
         try:
             bruto = base64.b64decode(data, validate=True)
         except (binascii.Error, ValueError) as exc:
-            raise TokenFormatoAntigoError(
-                "arquivo de token não está no formato protegido"
-            ) from exc
+            raise TokenFormatoAntigoError("arquivo de token não está no formato protegido") from exc
         try:
             return self._agente.unprotect(bruto)
         except OSError as exc:
             raise CofreIndisponivelError(f"DPAPI falhou: {exc}") from exc
 
 
-_KEYCHAIN_ITEM_NOT_FOUND = -25300  # msal_extensions.osx.KeychainError.ITEM_NOT_FOUND, medido nesta sessão
+# msal_extensions.osx.KeychainError.ITEM_NOT_FOUND, medido nesta sessão
+_KEYCHAIN_ITEM_NOT_FOUND = -25300
 
 
 def _criar_keychain():
