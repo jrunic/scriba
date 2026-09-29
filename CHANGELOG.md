@@ -13,6 +13,14 @@ tags: [changelog, scriba]
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+### Adicionado
+
+- Conteúdo do token de sessão protegido pelo cofre de credenciais do
+  sistema operacional — DPAPI no Windows, Keychain no macOS (dependência
+  nova: `msal-extensions`). Token em formato antigo (de antes desta
+  proteção) pede login de novo automaticamente. `auth logout` remove
+  também o item do Keychain em macOS. Linux fica fora desta fase.
+
 ### Corrigido
 
 - Sanitização de saída de terminal em todos os pontos que imprimem texto

@@ -44,6 +44,11 @@ decisões de terceiros fora do alcance do produto:
   para de funcionar.
 - **Reset de senha da conta** — dependendo da política do tenant, isso pode
   invalidar sessões existentes.
+- **Token em formato antigo, de antes da proteção do cofre do SO
+  (Windows/macOS).** Se o `scriba` foi usado antes desta proteção existir,
+  o próximo comando pede login de novo — o token antigo (texto puro) não
+  é lido pelo caminho novo. Não é um erro; é a transição de uma vez só
+  para o formato protegido.
 
 ## O que fazer quando pedir login de novo
 

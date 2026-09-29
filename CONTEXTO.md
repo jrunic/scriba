@@ -69,7 +69,8 @@ convenção da linguagem/comunidade, não o padrão PT-BR do brain.
   projeto já teve uma decisão de biblioteca avaliada formalmente (O365 vs
   msgraph-sdk) e opera sobre dado sensível (e-mail/agenda de terceiros)
 - **Atuais:** `msal`, `O365`, `typer`, `rich`, `tomli-w` (escrita TOML;
-  leitura via `tomllib` da stdlib)
+  leitura via `tomllib` da stdlib), `msal-extensions` (pin exato 1.3.1 —
+  cofre do SO para o token, F1 da auditoria, Fase 2)
 
 ### Estrutura
 
@@ -80,7 +81,7 @@ docs/decisoes/  — ADRs locais
 docs/dominio/   — modelo de domínio (neg-02)
 docs/{tutoriais,guias,referencias,explicacoes}/ — quadrantes Diátaxis (ADR 20260620)
 
-src/scriba/                  — main.py (entry point Typer), auth.py, config.py, display.py
+src/scriba/                  — main.py (entry point Typer), auth.py, config.py, display.py, token_crypto.py
 src/scriba/commands/         — sub-apps Typer por domínio: auth_cmd.py, mail_cmd.py, cal_cmd.py
 tests/                       — unit (mocka O365 na fronteira) + integração (typer.testing.CliRunner)
 scripts/                     — scripts de debug de auth para validação em campo (fora do pacote)
@@ -244,6 +245,14 @@ GitHub Actions por hash de commit. 104 testes verdes. Lacunas conhecidas
 em `## Pendências`. A Fase 2 (F1 da mesma auditoria, cofre do SO para o
 token) é jd-task #1077, ciclo 5 — spec pronta, plano ainda não escrito.
 
+Quinto incremento (`scriba-20260929-endurecimento-pos-auditoria-fase2`,
+jd-task #1077) implementado — F1 da auditoria: conteúdo do token
+protegido pelo cofre do sistema operacional (DPAPI no Windows, Keychain
+no macOS), via `cryptography_manager` (dependência nova `msal-extensions`,
+pin exato 1.3.1, ADR local). Linux fora de escopo — permanece só com a
+permissão de arquivo da Fase 1. Validação de campo (bancada Windows
+AppLocker e macOS) pendente antes de aceitar o ciclo — ver `## Pendências`.
+
 ## Pendências
 
 - [ ] Definir o próximo incremento (envio continua fora por decisão de
@@ -277,11 +286,12 @@ token) é jd-task #1077, ciclo 5 — spec pronta, plano ainda não escrito.
          `TENANT_PROIBIDO`; se ela for removida, esses testes continuam
          verdes. Corrigir a fixture antes de confiar neles como
          regressão.
-- [ ] Fase 2 do endurecimento pós-auditoria (jd-task #1077, ciclo 5 do
-      roadmap) — cofre do SO para o token (DPAPI/Keychain) — spec
-      revisada, ainda sem plano. Depende desta Fase 1 já estar em
-      `main` (confirmado) antes de planejar a subclasse do backend de
-      token que ela estende.
+- [ ] **Validação de campo da Fase 2 (jd-task #1077) antes de aceitar o
+      ciclo 5** — bancada Windows AppLocker com tenant real (prazo
+      2026-10-20, jd-task #1077 linkada a #1055) e macOS com Keychain
+      real, os onze comandos de ponta a ponta nas duas plataformas. Sem
+      essa validação, o ciclo não fecha — não é suíte automatizada que
+      substitui.
 
 ## Referências
 

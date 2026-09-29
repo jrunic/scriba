@@ -103,6 +103,11 @@ install .`) é o caminho seguro — os comandos abaixo então rodam com o
 Python desse ambiente (`.venv-scriba/bin/scriba` em vez de `scriba`), não com
 `--break-system-packages`.
 
+O conteúdo do token de sessão, depois do login, fica protegido pelo cofre
+de credenciais do sistema operacional (DPAPI no Windows, Keychain no
+macOS) — não em texto puro no arquivo. Em Linux, essa proteção ainda não
+existe; o arquivo mantém só a permissão restrita (0600) da fase anterior.
+
 **3. Localizar o executável (importante em Windows)**
 
 Em Windows, `pip install --user` frequentemente não coloca o script no PATH.

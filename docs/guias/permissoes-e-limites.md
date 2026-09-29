@@ -57,14 +57,19 @@ leitura do próprio perfil básico (nome, e-mail), sem escrita.
 
 ## O que o token em disco realmente é
 
-O token de acesso e o de atualização (`refresh_token`) ficam em um arquivo em
-disco, na máquina onde o `scriba` roda. **Esse arquivo, sozinho, é
-equivalente a acesso à conta — sem precisar da senha — até ser revogado.**
-Quem tiver acesso de leitura a esse arquivo tem, na prática, o mesmo alcance
-que os dois escopos acima permitem. Isso não é um defeito do `scriba`
-especificamente — é como qualquer token OAuth de longa duração funciona — mas
-vale nomear sem deixar implícito: proteger o acesso à máquina onde o `scriba`
-roda é proteger a conta.
+**Em Windows e macOS**, o conteúdo do arquivo de token é protegido pelo
+cofre de credenciais do sistema operacional (DPAPI/Keychain) — o arquivo,
+sozinho, não é mais equivalente a acesso à conta; decifrar o conteúdo
+exige rodar como o mesmo usuário do sistema operacional que autenticou
+(a garantia é do SO, não do `scriba`).
+
+**Em Linux**, essa proteção ainda não existe (achado F1 da auditoria de
+segurança externa, Fase 2 parcial): o token de acesso e o de atualização
+(`refresh_token`) ficam em texto puro, protegidos só por permissão de
+arquivo (leitura/escrita restrita ao dono). **Esse arquivo, sozinho, é
+equivalente a acesso à conta — sem precisar da senha — até ser
+revogado.** Quem tiver acesso de leitura como o mesmo usuário do sistema
+tem, na prática, o mesmo alcance que os dois escopos acima permitem.
 
 ## Resumo
 
@@ -72,5 +77,5 @@ roda é proteger a conta.
 |---|---|---|---|
 | `Mail.ReadWrite` | Sim | Ler mensagens, criar/editar rascunho e resposta | Ler/editar/apagar qualquer mensagem da caixa (não só rascunhos do scriba) |
 | `Calendars.ReadWrite` | Sim | Ler/criar/editar eventos em calendários com acesso de escrita | Inclui calendários compartilhados por terceiros, não só os próprios |
-| `offline_access` | Implícito (MSAL) | Sessão persiste sem novo login | Token em disco equivale a acesso sem senha até ser revogado |
+| `offline_access` | Implícito (MSAL) | Sessão persiste sem novo login | Em Windows/macOS, o token em disco é protegido pelo cofre do SO; em Linux, ainda equivale a acesso sem senha até ser revogado |
 | `User.Read` | Não, no código; possível no app registration | Leitura do próprio perfil | — |

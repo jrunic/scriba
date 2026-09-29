@@ -40,11 +40,16 @@ de trabalho declarada em `CONTEXTO.md` §Onde o trabalho acontece (ADR
 
 ## Módulos principais
 
-[Tabela de módulos/pastas/arquivos críticos com responsabilidade de cada um. Atualize quando criar/mover/renomear.]
-
 | Módulo | Responsabilidade |
 |---|---|
-| [exemplo] | [exemplo] |
+| `src/scriba/main.py` | Entry point Typer, registra os grupos de comando |
+| `src/scriba/auth.py` | Authorization code flow + PKCE via loopback local, backend de token |
+| `src/scriba/token_crypto.py` | Adaptadores de criptografia do token por SO (DPAPI/Keychain), F1 da auditoria (Fase 2) |
+| `src/scriba/config.py` | Leitura/escrita de configuração e diretório de estado |
+| `src/scriba/display.py` | Helpers de saída (console, sucesso, erro) |
+| `src/scriba/commands/auth_cmd.py` | Comandos `auth login`/`logout`/`status` |
+| `src/scriba/commands/mail_cmd.py` | Comandos de e-mail |
+| `src/scriba/commands/cal_cmd.py` | Comandos de calendário |
 
 ## Fluxos críticos
 
