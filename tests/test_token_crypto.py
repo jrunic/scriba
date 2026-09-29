@@ -148,3 +148,44 @@ def test_macos_adapter_raises_cofre_indisponivel_for_other_keychain_errors():
 
         with pytest.raises(CofreIndisponivelError):
             adaptador.decrypt("marcador")
+
+
+def test_criar_adaptador_returns_windows_adapter_on_win32(monkeypatch):
+    monkeypatch.setattr("sys.platform", "win32")
+    with patch("scriba.token_crypto._criar_agente_dpapi"):
+        from scriba.token_crypto import AdaptadorWindowsDPAPI, criar_adaptador_criptografia
+
+        adaptador = criar_adaptador_criptografia(servico="scriba-estado-fake")
+
+    assert isinstance(adaptador, AdaptadorWindowsDPAPI)
+
+
+def test_criar_adaptador_returns_macos_adapter_on_darwin(monkeypatch):
+    monkeypatch.setattr("sys.platform", "darwin")
+    with patch("scriba.token_crypto._criar_keychain"):
+        from scriba.token_crypto import AdaptadorMacOSKeychain, criar_adaptador_criptografia
+
+        adaptador = criar_adaptador_criptografia(servico="scriba-estado-fake")
+
+    assert isinstance(adaptador, AdaptadorMacOSKeychain)
+
+
+def test_criar_adaptador_returns_none_on_linux(monkeypatch):
+    """Linux fica fora de escopo desta fase — a fábrica devolve None, e
+    quem chama não atribui cryptography_manager nenhum, preservando o
+    comportamento da Fase 1 (só permissão de arquivo)."""
+    monkeypatch.setattr("sys.platform", "linux")
+    from scriba.token_crypto import criar_adaptador_criptografia
+
+    assert criar_adaptador_criptografia(servico="scriba-estado-fake") is None
+
+
+def test_nome_servico_keychain_e_derivado_do_diretorio_de_estado():
+    """Nome de serviço num único lugar — auth.py e auth_cmd.py
+    consomem esta função, não escrevem o f-string cada um por sua
+    conta (achado dev-10: duas cópias divergiriam em silêncio)."""
+    from scriba.token_crypto import nome_servico_keychain
+
+    assert nome_servico_keychain("/home/user/.local/state/scriba") == (
+        "scriba:/home/user/.local/state/scriba"
+    )

@@ -15,6 +15,7 @@ essas funções, não as classes da lib, que os testes mockam.
 
 import base64
 import binascii
+import sys
 
 
 class TokenFormatoAntigoError(Exception):
@@ -115,3 +116,23 @@ class AdaptadorMacOSKeychain:
             if getattr(exc, "exit_status", None) == _KEYCHAIN_ITEM_NOT_FOUND:
                 return ""
             raise CofreIndisponivelError(f"Keychain falhou: {exc}") from exc
+
+
+def nome_servico_keychain(diretorio_de_estado) -> str:
+    """Nome único do item de Keychain, derivado do diretório de estado
+    do usuário — preserva isolamento entre raízes distintas de
+    SCRIBA_HOME na mesma máquina. Único lugar que monta essa string;
+    auth.py e auth_cmd.py chamam esta função, não replicam o f-string."""
+    return f"scriba:{diretorio_de_estado}"
+
+
+def criar_adaptador_criptografia(servico: str):
+    """Detecta a plataforma em runtime e devolve o adaptador certo —
+    usuário não escolhe. Windows: AdaptadorWindowsDPAPI. macOS:
+    AdaptadorMacOSKeychain(servico). Qualquer outra plataforma (Linux
+    incluso — fora de escopo desta fase): None."""
+    if sys.platform == "win32":
+        return AdaptadorWindowsDPAPI()
+    if sys.platform == "darwin":
+        return AdaptadorMacOSKeychain(servico=servico)
+    return None
