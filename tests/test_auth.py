@@ -88,3 +88,81 @@ def test_authenticate_returns_false_and_pt_br_error_on_timeout(monkeypatch, tmp_
     message = mock_print_error.call_args.args[0]
     assert "5 minutos" in message
     assert "Timeout" not in message and "timeout" not in message.lower()
+
+
+def test_token_file_gets_restrictive_permission_after_save(monkeypatch, tmp_path):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+
+    from scriba.auth import _token_backend
+
+    backend = _token_backend()
+    backend._cache = {"fake": "token-cache-state"}
+    backend._has_state_changed = True
+
+    saved = backend.save_token(force=True)
+
+    assert saved is True
+    token_path = tmp_path / "token"
+    assert token_path.exists()
+    mode = token_path.stat().st_mode & 0o777
+    assert mode == 0o600
+
+
+def test_token_file_permission_is_reapplied_on_second_save_simulating_refresh(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+
+    from scriba.auth import _token_backend
+
+    backend = _token_backend()
+    backend._cache = {"fake": "token-cache-state-v1"}
+    backend._has_state_changed = True
+    backend.save_token(force=True)
+
+    token_path = tmp_path / "token"
+    token_path.chmod(0o644)  # simula umask frouxa entre as duas escritas
+    assert (token_path.stat().st_mode & 0o777) == 0o644
+
+    backend._cache = {"fake": "token-cache-state-v2-refresh"}
+    backend._has_state_changed = True
+    backend.save_token(force=True)
+
+    assert (token_path.stat().st_mode & 0o777) == 0o600
+
+
+def test_token_file_permission_applies_even_with_preexisting_loose_directory(monkeypatch, tmp_path):
+    """Critério 3 da spec: a correção não depende do mkdir ter criado o
+    diretório com a permissão certa — o diretório de estado pode já
+    existir de uma instalação anterior a esta correção, com permissão
+    frouxa, e o chmod do arquivo tem de valer do mesmo jeito."""
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    tmp_path.chmod(0o755)  # diretório pré-existente, frouxo
+
+    from scriba.auth import _token_backend
+
+    backend = _token_backend()
+    backend._cache = {"fake": "token-cache-state"}
+    backend._has_state_changed = True
+    backend.save_token(force=True)
+
+    token_path = tmp_path / "token"
+    assert (token_path.stat().st_mode & 0o777) == 0o600
+
+
+def test_cryptography_manager_attribute_is_still_inherited_and_settable(monkeypatch, tmp_path):
+    """A Fase 2 (jd-task #1077, ciclo 5) atribui um adaptador a este
+    atributo, herdado de BaseTokenBackend, sem redesenhar esta subclasse
+    — este teste trava que a subclasse não sobrescreve nem remove o
+    atributo. `SCRIBA_HOME` isolado em tmp_path (achado dev-10: sem
+    isso, `_token_backend()` cria/toca o diretório de estado real da
+    máquina de quem roda a suíte)."""
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    from scriba.auth import _token_backend
+
+    backend = _token_backend()
+    assert backend.cryptography_manager is None
+
+    sentinel = object()
+    backend.cryptography_manager = sentinel
+    assert backend.cryptography_manager is sentinel

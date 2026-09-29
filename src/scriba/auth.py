@@ -42,8 +42,30 @@ class _CallbackHandler(BaseHTTPRequestHandler):
         pass  # silencia o log padrão (evita vazar a query string do callback no stdout)
 
 
+class _TokenBackendComPermissaoRestrita(FileSystemTokenBackend):
+    """Restringe a permissão do arquivo de token a 0600 — a lib O365
+    grava com `open("w")` puro, herdando a umask do processo (achado F2
+    da auditoria de segurança externa, 29/09/2026; medido: 0o644 sem
+    esta correção). O arquivo nasce já restrito (chmod ANTES do
+    conteúdo, não depois — achado dev-10: aplicar chmod só depois da
+    escrita deixa uma janela, ainda que curta e local, em que o
+    conteúdo do token já está em disco com a permissão frouxa da
+    umask). Não sobrescreve `cryptography_manager` (herdado de
+    BaseTokenBackend) — é o ponto de extensão que a Fase 2 (jd-task
+    #1077) usa depois, atribuindo um adaptador de criptografia a este
+    mesmo atributo, nesta mesma instância. Não redesenhar esta classe
+    sem coordenar com a Fase 2."""
+
+    def save_token(self, force: bool = False) -> bool:
+        if not self.token_path.parent.exists():
+            self.token_path.parent.mkdir(parents=True)
+        self.token_path.touch(mode=0o600, exist_ok=True)
+        self.token_path.chmod(0o600)  # touch() não reaplica modo em arquivo já existente
+        return super().save_token(force=force)
+
+
 def _token_backend() -> FileSystemTokenBackend:
-    return FileSystemTokenBackend(
+    return _TokenBackendComPermissaoRestrita(
         token_path=get_state_dir(),
         token_filename=TOKEN_FILENAME,
     )
