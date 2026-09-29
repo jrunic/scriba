@@ -13,6 +13,28 @@ tags: [changelog, scriba]
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/).
 
+### Corrigido
+
+- Sanitização de saída de terminal em todos os pontos que imprimem texto
+  remoto (assunto, remetente, corpo, nome de calendário) — markup Rich e
+  caracteres de controle não são mais interpretados.
+- Arquivo de token com permissão restrita (0600) após toda escrita.
+- Tenant obrigatório em `auth login` e nos comandos que exigem
+  autenticação — `"common"` não é mais aceito, mesmo já salvo em
+  configuração de uma instalação anterior.
+- `auth logout` avisa que a sessão no Microsoft Entra não é revogada
+  pela remoção do token local.
+- `mail draft`/`mail reply` não aceitam mais o corpo da mensagem como
+  argumento de linha de comando — leitura por `--body-file` ou entrada
+  padrão.
+
+### Alterado
+
+- Guia de instalação passa a orientar instalação a partir da release
+  publicada (com conferência de checksum), não mais da branch principal.
+- Guia de cadastro do aplicativo no Entra: seção de revogação de acesso
+  reescrita a partir de documentação oficial da Microsoft.
+
 ## [0.2.1] — 2026-09-28
 
 ### Adicionado
