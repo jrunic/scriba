@@ -1,8 +1,24 @@
+import sys
 from unittest.mock import MagicMock, patch
 from urllib.parse import parse_qs, urlparse
 
+import pytest
+
 from scriba import auth
 from scriba.auth import SCOPES, _get_graph_scopes
+
+_SEM_CHMOD_POSIX = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason=(
+        "chmod() não implementa permissão POSIX no Windows — o sistema usa "
+        "ACL, e stat() sempre reporta 0o666 num arquivo normal. Medido em "
+        "campo na bancada Windows (koine-restrito) em 29/09/2026, rodando a "
+        "suíte de verdade pela primeira vez num Windows real. Não é bug do "
+        "produto: já documentado como limite conhecido desde a Fase 1 — "
+        "Windows é protegido por cifra do conteúdo (DPAPI, Fase 2), não por "
+        "permissão de arquivo."
+    ),
+)
 
 
 def test_scopes_never_include_mail_send(monkeypatch, tmp_path):
@@ -90,6 +106,7 @@ def test_authenticate_returns_false_and_pt_br_error_on_timeout(monkeypatch, tmp_
     assert "Timeout" not in message and "timeout" not in message.lower()
 
 
+@_SEM_CHMOD_POSIX
 def test_token_file_gets_restrictive_permission_after_save(monkeypatch, tmp_path):
     monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
 
@@ -108,6 +125,7 @@ def test_token_file_gets_restrictive_permission_after_save(monkeypatch, tmp_path
     assert mode == 0o600
 
 
+@_SEM_CHMOD_POSIX
 def test_token_file_permission_is_reapplied_on_second_save_simulating_refresh(
     monkeypatch, tmp_path
 ):
@@ -131,6 +149,7 @@ def test_token_file_permission_is_reapplied_on_second_save_simulating_refresh(
     assert (token_path.stat().st_mode & 0o777) == 0o600
 
 
+@_SEM_CHMOD_POSIX
 def test_token_file_permission_applies_even_with_preexisting_loose_directory(monkeypatch, tmp_path):
     """Critério 3 da spec: a correção não depende do mkdir ter criado o
     diretório com a permissão certa — o diretório de estado pode já
