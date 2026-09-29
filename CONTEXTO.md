@@ -232,6 +232,18 @@ corrigido em 3 pontos fora do alcance da varredura do incremento 3
 (docstring do comando, script de smoke test, glossário). Publicado como
 release `v0.2.1` (28/09/2026).
 
+Quarto incremento (`scriba-20260929-endurecimento-pos-auditoria-fase1`,
+jd-task #1076) implementado e **aceito** em 29/09/2026 — oito achados de
+uma auditoria de segurança externa sem dependência nova: sanitização Rich
+em 5 pontos de exibição, permissão restrita (0600) do arquivo de token,
+tenant obrigatório sem exceção para `"common"`, aviso de não-revogação no
+`auth logout`, guia de instalação por release com checksum, guia de
+revogação reescrito a partir de fonte oficial da Microsoft, corpo de
+mensagem fora de argumento de CLI (`--body-file`/stdin), pinagem das
+GitHub Actions por hash de commit. 104 testes verdes. Lacunas conhecidas
+em `## Pendências`. A Fase 2 (F1 da mesma auditoria, cofre do SO para o
+token) é jd-task #1077, ciclo 5 — spec pronta, plano ainda não escrito.
+
 ## Pendências
 
 - [ ] Definir o próximo incremento (envio continua fora por decisão de
@@ -242,6 +254,34 @@ release `v0.2.1` (28/09/2026).
       solução própria ainda. Considerar se algum incremento futuro precisa
       de um mecanismo alternativo pra esse cenário (ex.: exibir a URL como
       fallback se o navegador não responder em N segundos).
+- [ ] **Endurecimento pós-auditoria, Fase 1 (incremento 4) deixou quatro
+      lacunas conhecidas, não fechadas por essa fase** — conferir antes de
+      assumir que estão resolvidas:
+      1. Permissão restrita do token (0600) não tem teste com
+         `SCRIBA_HOME` apontando para diretório de outro dono/grupo — só
+         o caso de diretório pré-existente frouxo do mesmo usuário.
+      2. `mail draft`/`mail reply` sem `--body-file` leem `stdin` sem
+         timeout — um consumidor (agente via subprocesso) que não feche
+         o descritor trava o comando indefinidamente. Mitigação futura:
+         exigir marcador explícito pra ler de stdin, ou timeout na
+         leitura.
+      3. O listener de loopback do login (`_capture_callback_url`)
+         continua vulnerável a um processo local consumindo a única
+         `handle_request()` antes do navegador do usuário — só a
+         exceção de state CSRF tem tratamento, a exaustão de requisição
+         única não.
+      4. Três testes em `tests/test_auth.py`
+         (`test_is_authenticated_returns_false_when_tenant_is_common` e
+         os dois vizinhos) passam pelo motivo errado — ausência de token
+         salvo, não validação de tenant. Não provam a guarda de
+         `TENANT_PROIBIDO`; se ela for removida, esses testes continuam
+         verdes. Corrigir a fixture antes de confiar neles como
+         regressão.
+- [ ] Fase 2 do endurecimento pós-auditoria (jd-task #1077, ciclo 5 do
+      roadmap) — cofre do SO para o token (DPAPI/Keychain) — spec
+      revisada, ainda sem plano. Depende desta Fase 1 já estar em
+      `main` (confirmado) antes de planejar a subclasse do backend de
+      token que ela estende.
 
 ## Referências
 
