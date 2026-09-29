@@ -74,3 +74,77 @@ def test_windows_adapter_raises_cofre_indisponivel_when_dpapi_fails():
 
         with pytest.raises(CofreIndisponivelError):
             adaptador.decrypt(cifrado_valido)
+
+
+class _OSErrorComExitStatus(OSError):
+    def __init__(self, exit_status):
+        super().__init__()
+        self.exit_status = exit_status
+
+
+def test_macos_adapter_writes_to_keychain_and_returns_marker():
+    from unittest.mock import MagicMock
+
+    keychain_mock = MagicMock()
+
+    with patch("scriba.token_crypto._criar_keychain", return_value=keychain_mock):
+        from scriba.token_crypto import AdaptadorMacOSKeychain
+
+        adaptador = AdaptadorMacOSKeychain(servico="scriba-teste-servico")
+        marcador = adaptador.encrypt('{"access_token": "abc"}')
+
+    keychain_mock.set_generic_password.assert_called_once_with(
+        "scriba-teste-servico", "token", '{"access_token": "abc"}'
+    )
+    assert marcador  # marcador não vazio, mas nunca o segredo
+    assert "access_token" not in marcador
+
+
+def test_macos_adapter_reads_from_keychain_ignoring_file_content():
+    from unittest.mock import MagicMock
+
+    keychain_mock = MagicMock()
+    keychain_mock.get_generic_password.return_value = '{"access_token": "abc"}'
+
+    with patch("scriba.token_crypto._criar_keychain", return_value=keychain_mock):
+        from scriba.token_crypto import AdaptadorMacOSKeychain
+
+        adaptador = AdaptadorMacOSKeychain(servico="scriba-teste-servico")
+        resultado = adaptador.decrypt("qualquer-marcador-ou-json-antigo-ignorado")
+
+    assert resultado == '{"access_token": "abc"}'
+    keychain_mock.get_generic_password.assert_called_once_with("scriba-teste-servico", "token")
+
+
+def test_macos_adapter_returns_empty_string_when_keychain_item_not_found():
+    """Achado medido nesta sessão (round-trip real contra o Keychain do
+    macOS, fora deste teste): get_generic_password levanta um OSError
+    (KeychainError na lib real) com .exit_status == -25300 quando o
+    item não existe — não devolve None. Sem capturar isso, ler um token
+    antigo/inexistente em macOS estouraria exceção não tratada."""
+    from unittest.mock import MagicMock
+
+    keychain_mock = MagicMock()
+    keychain_mock.get_generic_password.side_effect = _OSErrorComExitStatus(-25300)
+
+    with patch("scriba.token_crypto._criar_keychain", return_value=keychain_mock):
+        from scriba.token_crypto import AdaptadorMacOSKeychain
+
+        adaptador = AdaptadorMacOSKeychain(servico="scriba-teste-servico")
+
+        assert adaptador.decrypt("marcador-ou-json-antigo") == ""
+
+
+def test_macos_adapter_raises_cofre_indisponivel_for_other_keychain_errors():
+    from unittest.mock import MagicMock
+
+    from scriba.token_crypto import AdaptadorMacOSKeychain, CofreIndisponivelError
+
+    keychain_mock = MagicMock()
+    keychain_mock.get_generic_password.side_effect = _OSErrorComExitStatus(-128)  # ACCESS_DENIED
+
+    with patch("scriba.token_crypto._criar_keychain", return_value=keychain_mock):
+        adaptador = AdaptadorMacOSKeychain(servico="scriba-teste-servico")
+
+        with pytest.raises(CofreIndisponivelError):
+            adaptador.decrypt("marcador")
