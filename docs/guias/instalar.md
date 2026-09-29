@@ -43,14 +43,21 @@ release mais recente do GitHub. O campo `digest` da API de releases já traz
 o checksum SHA-256 sem precisar de autenticação nem do `gh`:
 
 ```
-URL_WHL=$(curl -sL https://api.github.com/repos/jrunic/scriba/releases/latest \
-  | grep "browser_download_url.*whl" | cut -d '"' -f 4)
+eval "$(python3 <<'FIM'
+import json, urllib.request
+d = json.load(urllib.request.urlopen("https://api.github.com/repos/jrunic/scriba/releases/latest"))
+a = next(x for x in d["assets"] if x["name"].endswith(".whl"))
+print("URL_WHL=" + repr(a["browser_download_url"]))
+print("DIGEST_ESPERADO=" + repr(a["digest"]))
+FIM
+)"
 curl -sLO "$URL_WHL"
-DIGEST_ESPERADO=$(curl -sL https://api.github.com/repos/jrunic/scriba/releases/latest \
-  | grep -A2 "browser_download_url.*whl" | grep '"digest"' | cut -d '"' -f 4)
 ```
 Esperado: `scriba-<versão>-py3-none-any.whl` no diretório atual, e
-`$DIGEST_ESPERADO` no formato `sha256:<64 caracteres hex>`.
+`$DIGEST_ESPERADO` no formato `sha256:<64 caracteres hex>`. (Usar `python3`
+em vez de `grep`/`cut` para ler o JSON — medido nesta sessão: `digest` vem
+**antes** de `browser_download_url` no JSON da API, então um `grep -A2`
+ancorado em `browser_download_url` nunca encontra o campo.)
 
 **Conferir a integridade do arquivo baixado** antes de instalar:
 
