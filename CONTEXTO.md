@@ -252,7 +252,13 @@ protegido pelo cofre do sistema operacional (DPAPI no Windows, Keychain
 no macOS), via `cryptography_manager` (dependência nova `msal-extensions`,
 pin exato 1.3.1, ADR local). Linux fora de escopo — permanece só com a
 permissão de arquivo da Fase 1. Validação de campo (bancada Windows
-AppLocker e macOS) pendente antes de aceitar o ciclo — ver `## Pendências`.
+AppLocker e macOS) feita em 29/09/2026, ciclo 5 **aceito**.
+
+**Release `v0.3.0` publicada em 29/09/2026** — consolida as Fases 1 e 2 do
+endurecimento pós-auditoria. Teto de versão adicionado à dependência
+`O365` (`<3.0`, achado F6 da auditoria). Versão anterior publicada
+(`v0.2.1`) era a mesma analisada pela auditoria original — quem instalar
+pelo guia agora recebe a corrigida.
 
 ## Pendências
 
