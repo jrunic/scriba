@@ -287,12 +287,15 @@ AppLocker e macOS) pendente antes de aceitar o ciclo — ver `## Pendências`.
          `TENANT_PROIBIDO`; se ela for removida, esses testes continuam
          verdes. Corrigir a fixture antes de confiar neles como
          regressão.
-- [ ] **Validação de campo da Fase 2 (jd-task #1077) antes de aceitar o
-      ciclo 5** — bancada Windows AppLocker com tenant real (prazo
-      2026-10-20, jd-task #1077 linkada a #1055) e macOS com Keychain
-      real, os onze comandos de ponta a ponta nas duas plataformas. Sem
-      essa validação, o ciclo não fecha — não é suíte automatizada que
-      substitui.
+- [x] ~~Validação de campo da Fase 2 (jd-task #1077) antes de aceitar o
+      ciclo 5~~ — feita em 29/09/2026, bancada Windows AppLocker (tenant
+      `jedilabs123.onmicrosoft.com`) e macOS, os onze comandos de ponta a
+      ponta nas duas plataformas, critérios 6 e 7 atendidos. Achado no
+      caminho: os 3 testes de permissão de arquivo da Fase 1 falham no
+      Windows real (`chmod` não é POSIX lá) — corrigidos com
+      `skipif(sys.platform == "win32")`. Detalhe:
+      `11-tarefas/20260929-validacao-de-campo-fase2-endurecimento.md`
+      (fora deste repositório).
 
 ## Referências
 
