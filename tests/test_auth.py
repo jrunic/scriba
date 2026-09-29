@@ -395,3 +395,109 @@ def test_is_authenticated_does_not_swallow_real_vault_failure(monkeypatch, tmp_p
 
     with pytest.raises(_CIE):
         is_authenticated()
+
+
+def test_token_file_content_is_protected_on_windows_after_save(monkeypatch, tmp_path):
+    """Critério 1, Windows. Asserção sobre o argumento que chegou em
+    protect() — achado dev-10: sem isso, um encrypt() que descartasse
+    o conteúdo passaria pela asserção de "não contém a substring"."""
+    from unittest.mock import MagicMock, patch
+
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "win32")
+
+    from scriba.token_crypto import criar_adaptador_criptografia
+
+    monkeypatch.setattr("scriba.auth.criar_adaptador_criptografia", criar_adaptador_criptografia)
+
+    agente_mock = MagicMock()
+    agente_mock.protect.return_value = b"bytes-cifrados-fake"
+
+    with patch("scriba.token_crypto._criar_agente_dpapi", return_value=agente_mock):
+        from scriba.auth import _token_backend
+
+        backend = _token_backend()
+        backend._cache = {"access_token": "token-real-de-teste"}
+        backend._has_state_changed = True
+        backend.save_token(force=True)
+
+    agente_mock.protect.assert_called_once()
+    conteudo_enviado_para_cifrar = agente_mock.protect.call_args.args[0]
+    assert "token-real-de-teste" in conteudo_enviado_para_cifrar
+
+    token_path = tmp_path / "token"
+    conteudo_em_disco = token_path.read_text()
+    assert "token-real-de-teste" not in conteudo_em_disco
+    assert "access_token" not in conteudo_em_disco
+
+
+def test_token_file_stays_protected_after_simulated_refresh_windows(monkeypatch, tmp_path):
+    from unittest.mock import MagicMock, patch
+
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "win32")
+
+    from scriba.token_crypto import criar_adaptador_criptografia
+
+    monkeypatch.setattr("scriba.auth.criar_adaptador_criptografia", criar_adaptador_criptografia)
+
+    agente_mock = MagicMock()
+    agente_mock.protect.side_effect = [b"cifrado-v1", b"cifrado-v2-refresh"]
+
+    with patch("scriba.token_crypto._criar_agente_dpapi", return_value=agente_mock):
+        from scriba.auth import _token_backend
+
+        backend = _token_backend()
+        backend._cache = {"access_token": "v1"}
+        backend._has_state_changed = True
+        backend.save_token(force=True)
+
+        backend._cache = {"access_token": "v2-apos-refresh"}
+        backend._has_state_changed = True
+        backend.save_token(force=True)
+
+    assert agente_mock.protect.call_count == 2
+    primeiro_conteudo = agente_mock.protect.call_args_list[0].args[0]
+    segundo_conteudo = agente_mock.protect.call_args_list[1].args[0]
+    assert "v1" in primeiro_conteudo and "v2-apos-refresh" not in primeiro_conteudo
+    assert "v2-apos-refresh" in segundo_conteudo
+
+    conteudo_em_disco = (tmp_path / "token").read_text()
+    assert "v1" not in conteudo_em_disco
+    assert "v2-apos-refresh" not in conteudo_em_disco
+
+
+def test_keychain_content_is_protected_on_macos_after_save_and_refresh(monkeypatch, tmp_path):
+    from unittest.mock import MagicMock, patch
+
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "darwin")
+
+    from scriba.token_crypto import criar_adaptador_criptografia
+
+    monkeypatch.setattr("scriba.auth.criar_adaptador_criptografia", criar_adaptador_criptografia)
+
+    keychain_mock = MagicMock()
+
+    with patch("scriba.token_crypto._criar_keychain", return_value=keychain_mock):
+        from scriba.auth import _token_backend
+
+        backend = _token_backend()
+        backend._cache = {"access_token": "v1"}
+        backend._has_state_changed = True
+        backend.save_token(force=True)
+
+        backend._cache = {"access_token": "v2-apos-refresh"}
+        backend._has_state_changed = True
+        backend.save_token(force=True)
+
+    assert keychain_mock.set_generic_password.call_count == 2
+    primeiro_valor = keychain_mock.set_generic_password.call_args_list[0].args[2]
+    segundo_valor = keychain_mock.set_generic_password.call_args_list[1].args[2]
+    assert "v1" in primeiro_valor
+    assert "v2-apos-refresh" in segundo_valor
+
+    conteudo_arquivo = (tmp_path / "token").read_text()
+    assert "v1" not in conteudo_arquivo
+    assert "v2-apos-refresh" not in conteudo_arquivo
+    assert "access_token" not in conteudo_arquivo
