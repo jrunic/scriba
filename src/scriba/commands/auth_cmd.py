@@ -1,11 +1,14 @@
 """Comandos de autenticação: login, logout, status."""
 
+import subprocess
+import sys
+
 import typer
 
 from scriba.auth import TENANT_PROIBIDO, TOKEN_FILENAME, authenticate, is_authenticated
 from scriba.config import get_state_dir, load_config, save_config
 from scriba.display import console, print_error, print_success
-from scriba.token_crypto import CofreIndisponivelError
+from scriba.token_crypto import CofreIndisponivelError, nome_servico_keychain
 
 app = typer.Typer(help="Gerencia autenticação.")
 
@@ -50,10 +53,22 @@ def login(
 
 @app.command()
 def logout() -> None:
-    """Remove o token local."""
+    """Remove o token local (e o item do Keychain em macOS, se houver)."""
     token_path = get_state_dir() / TOKEN_FILENAME
-    if token_path.exists():
+    tinha_token_local = token_path.exists()
+
+    if tinha_token_local:
         token_path.unlink()
+
+    if sys.platform == "darwin":
+        servico = nome_servico_keychain(get_state_dir())
+        subprocess.run(
+            ["security", "delete-generic-password", "-s", servico, "-a", "token"],
+            capture_output=True,
+            check=False,
+        )
+
+    if tinha_token_local:
         print_success("Logout feito — token removido.")
         console.print(
             "[yellow]Aviso:[/] isso remove só o token local. A sessão no Microsoft "

@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
@@ -153,6 +153,7 @@ def test_logout_removes_token_file(tmp_path, monkeypatch):
     jeito, então o teste nunca teria pego o bug (confirmado por dir real
     no state dir da VM)."""
     monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "linux")
     token_file = tmp_path / "token"
     token_file.write_text("fake-token")
 
@@ -165,6 +166,7 @@ def test_logout_removes_token_file(tmp_path, monkeypatch):
 @patch("scriba.commands.auth_cmd.console")
 def test_logout_without_token_reports_already_logged_out(mock_console, tmp_path, monkeypatch):
     monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "linux")
 
     result = runner.invoke(app, ["auth", "logout"])
 
@@ -174,6 +176,7 @@ def test_logout_without_token_reports_already_logged_out(mock_console, tmp_path,
 
 def test_logout_warns_that_entra_session_is_not_revoked(tmp_path, monkeypatch):
     monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "linux")
     token_file = tmp_path / "token"
     token_file.write_text("fake-token")
 
@@ -200,3 +203,46 @@ def test_status_reports_distinct_message_when_vault_is_unavailable(monkeypatch):
     assert result.exit_code == 1
     assert "cofre" in result.output.lower()
     assert "traceback" not in result.output.lower()
+
+
+def test_logout_removes_keychain_item_on_macos(tmp_path, monkeypatch):
+    """Critério 5. Remoção incondicional à existência do arquivo — em
+    macOS o segredo mora no Keychain, não no arquivo (achado dev-10:
+    a primeira versão deste plano só removia dentro do `if
+    token_path.exists()`, deixando o segredo real órfão se o arquivo
+    já tivesse sido apagado por outro meio)."""
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "darwin")
+
+    with patch("scriba.commands.auth_cmd.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0)
+        result = runner.invoke(app, ["auth", "logout"])
+
+    assert result.exit_code == 0
+    mock_run.assert_called_once()
+    comando = mock_run.call_args.args[0]
+    assert comando[:2] == ["security", "delete-generic-password"]
+
+
+def test_logout_removes_keychain_item_on_macos_even_without_local_file(tmp_path, monkeypatch):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "darwin")
+
+    with patch("scriba.commands.auth_cmd.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=44)
+        runner.invoke(app, ["auth", "logout"])
+
+    mock_run.assert_called_once()
+
+
+def test_logout_does_not_touch_keychain_on_windows(tmp_path, monkeypatch):
+    monkeypatch.setenv("SCRIBA_HOME", str(tmp_path))
+    monkeypatch.setattr("sys.platform", "win32")
+    token_file = tmp_path / "token"
+    token_file.write_text("qualquer-conteudo")
+
+    with patch("scriba.commands.auth_cmd.subprocess.run") as mock_run:
+        result = runner.invoke(app, ["auth", "logout"])
+
+    assert result.exit_code == 0
+    mock_run.assert_not_called()
