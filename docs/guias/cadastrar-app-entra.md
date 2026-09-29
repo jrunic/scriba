@@ -103,11 +103,35 @@ por qualquer canal (e-mail, chat) é seguro.
 
 ## Como revogar o acesso
 
-- **Revogar de um usuário específico**: **Enterprise applications** →
-  localizar o aplicativo → **Users and groups** ou a sessão do usuário em
-  **Users** → **Sign-in logs**, ou simplesmente pedir que o usuário revogue
-  o próprio consentimento (conta Microsoft → Privacidade → Aplicativos e
-  serviços conectados).
-- **Revogar por completo** (todos os usuários): **App registrations** →
-  localizar o aplicativo → **Delete**. Todos os tokens emitidos param de
-  funcionar.
+**Revogar as sessões ativas de um usuário** (invalida os refresh tokens do
+usuário — na próxima vez que qualquer aplicativo ligado ao Microsoft Entra,
+o `scriba` incluso, tentar renovar o access token, a renovação falha e o
+usuário precisa logar de novo; access tokens já emitidos continuam válidos
+até expirar, por padrão até 1 hora. **Aplica-se a todos os apps do usuário
+ligados ao Entra, não só ao `scriba`** — não existe revogação "só deste
+app" nesse fluxo; para bloquear só o `scriba`, revogar o cadastro do
+aplicativo por completo, abaixo):
+
+1. No [Microsoft Entra admin center](https://entra.microsoft.com): **Entra
+   ID** → **Users** → **All users**.
+2. Selecionar o usuário.
+3. Na página **Overview** do usuário, clicar em **Revoke sessions**.
+
+Alternativa mais drástica (bloqueia login do usuário em **tudo**, não só
+revoga token — usar só em cenário de conta comprometida, não para
+desativar o `scriba` de um usuário): antes do passo 3 acima, em **Account
+status** → **Edit** → desmarcar **Account enabled** → **Save**.
+
+**Revogar o cadastro do aplicativo por completo** (todos os usuários,
+nenhum consegue mais autenticar no `scriba` especificamente — a forma mais
+direta de "só este app"): **App registrations** → localizar o aplicativo
+(`scriba`) → **Delete**.
+
+**O próprio usuário também pode revogar seu consentimento**, sem depender
+de um administrador: conta Microsoft → Privacidade → Aplicativos e
+serviços conectados → localizar o `scriba` → remover.
+
+Fonte: [Revoke user access in an emergency in Microsoft Entra ID](https://learn.microsoft.com/en-us/entra/identity/users/users-revoke-access)
+(Microsoft Learn, consultado em 29/09/2026) — ação de revogação de sessão
+documentada tanto na navegação da UI quanto no comando PowerShell
+`Revoke-MgUserSignInSession` equivalente.
